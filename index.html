@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDKs (Compat Mode for maximum stability) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -41,10 +41,11 @@
                     <h2 class="text-2xl font-bold text-slate-900">Proyectos</h2>
                     <p class="text-slate-500 text-sm">Sincronizado en tiempo real</p>
                 </div>
-                <button onclick="openQuoteModal()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200">Nuevo +</button>
+                <!-- Botón de Nuevo Proyecto -->
+                <button onclick="window.openQuoteModal()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200">Nuevo +</button>
             </div>
             <div id="quotes-list" class="grid gap-3 pt-4">
-                <div class="bg-white p-6 rounded-3xl shadow-sm text-center text-slate-400 italic font-medium">Conectando...</div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm text-center text-slate-400 italic font-medium">Cargando base de datos...</div>
             </div>
         </section>
 
@@ -52,7 +53,7 @@
         <section id="view-materials" class="hidden space-y-4">
             <div class="flex justify-between items-end">
                 <h2 class="text-2xl font-bold text-slate-900">Catálogo</h2>
-                <button onclick="openMaterialModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold">Añadir</button>
+                <button onclick="window.openMaterialModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold">Añadir</button>
             </div>
             <div id="materials-list" class="grid gap-2"></div>
         </section>
@@ -61,7 +62,7 @@
         <section id="view-clients" class="hidden space-y-4">
             <div class="flex justify-between items-end">
                 <h2 class="text-2xl font-bold text-slate-900">Clientes</h2>
-                <button onclick="openClientModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold">Nuevo</button>
+                <button onclick="window.openClientModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold">Nuevo</button>
             </div>
             <div id="clients-list" class="grid gap-2"></div>
         </section>
@@ -69,15 +70,15 @@
 
     <!-- Navegación -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-16 z-50">
-        <button onclick="switchView('quotes')" id="nav-quotes" class="flex-1 flex flex-col items-center justify-center active-tab h-full">
+        <button onclick="window.switchView('quotes')" id="nav-quotes" class="flex-1 flex flex-col items-center justify-center active-tab h-full">
             <span class="text-xl">📋</span>
             <span class="text-[10px] font-bold uppercase mt-1">Proyectos</span>
         </button>
-        <button onclick="switchView('materials')" id="nav-materials" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">
+        <button onclick="window.switchView('materials')" id="nav-materials" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">
             <span class="text-xl">📦</span>
             <span class="text-[10px] font-bold uppercase mt-1">Catálogo</span>
         </button>
-        <button onclick="switchView('clients')" id="nav-clients" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">
+        <button onclick="window.switchView('clients')" id="nav-clients" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">
             <span class="text-xl">👥</span>
             <span class="text-[10px] font-bold uppercase mt-1">Clientes</span>
         </button>
@@ -88,11 +89,11 @@
         <div class="bg-white w-full h-full sm:h-[90vh] sm:max-w-2xl sm:rounded-3xl flex flex-col shadow-2xl overflow-hidden">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-slate-800" id="quote-modal-title">Proyecto</h3>
-                <button onclick="closeModals()" class="text-slate-400 text-3xl p-2">&times;</button>
+                <button onclick="window.closeModals()" class="text-slate-400 text-3xl p-2">&times;</button>
             </div>
             <div class="flex-1 overflow-y-auto p-6 space-y-6">
                 <div id="pdf-action-area" class="hidden">
-                    <button onclick="generatePDF()" class="w-full bg-red-50 text-red-600 border-2 border-dashed border-red-200 py-4 rounded-2xl font-black flex items-center justify-center gap-2">
+                    <button onclick="window.generatePDF()" class="w-full bg-red-50 text-red-600 border-2 border-dashed border-red-200 py-4 rounded-2xl font-black flex items-center justify-center gap-2">
                         📄 GENERAR PDF
                     </button>
                 </div>
@@ -108,7 +109,7 @@
                         <select id="q-material" class="w-full p-3 rounded-xl text-slate-900 font-bold border-none"></select>
                         <div class="flex gap-2">
                             <input type="number" id="q-qty" value="1" class="flex-1 p-3 rounded-xl text-slate-900 font-bold text-center border-none">
-                            <button onclick="addItemToQuote()" class="bg-yellow-400 text-slate-900 px-8 rounded-xl font-black">AÑADIR</button>
+                            <button onclick="window.addItemToQuote()" class="bg-yellow-400 text-slate-900 px-8 rounded-xl font-black">AÑADIR</button>
                         </div>
                     </div>
                 </div>
@@ -120,7 +121,7 @@
                     <span class="text-slate-400 font-bold uppercase">Total</span>
                     <span id="q-total-val" class="text-4xl font-black text-blue-400">0.00€</span>
                 </div>
-                <button onclick="saveQuote()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-lg">GUARDAR</button>
+                <button onclick="window.saveQuote()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-lg">GUARDAR PROYECTO</button>
             </div>
         </div>
     </div>
@@ -131,7 +132,7 @@
             <div class="p-4 bg-slate-50 border-b font-bold text-slate-800 text-center" id="form-modal-title">Formulario</div>
             <div id="form-container" class="p-6 space-y-4"></div>
             <div class="p-4 bg-slate-50 flex gap-2">
-                <button onclick="closeModals()" class="flex-1 bg-white border py-3 rounded-xl font-bold text-slate-500">Cancelar</button>
+                <button onclick="window.closeModals()" class="flex-1 bg-white border py-3 rounded-xl font-bold text-slate-500">Cancelar</button>
                 <button id="btn-form-save" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">Guardar</button>
             </div>
         </div>
@@ -140,7 +141,7 @@
     <div id="pdf-render-zone"></div>
 
     <script>
-        // CONFIGURACIÓN E INICIALIZACIÓN
+        // CONFIGURACIÓN GLOBAL
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'electri-pro-v1';
         let db, auth;
         
@@ -148,15 +149,7 @@
         window.currentQuoteItems = [];
         window.editingId = null;
 
-        // INICIO FIREBASE
-        try {
-            const config = JSON.parse(__firebase_config);
-            firebase.initializeApp(config);
-            db = firebase.firestore();
-            auth = firebase.auth();
-        } catch(e) { console.error("Firebase Error:", e); }
-
-        // FUNCIONES DE NAVEGACIÓN (GLOBALES)
+        // INICIALIZACIÓN DE FUNCIONES EN WINDOW (PARA ASEGURAR ACCESO DESDE ONCLICK)
         window.switchView = (v) => {
             ['quotes', 'materials', 'clients'].forEach(s => {
                 document.getElementById('view-' + s).classList.add('hidden');
@@ -173,15 +166,15 @@
             window.editingId = null;
         };
 
-        // GESTIÓN DE CLIENTES
+        // CLIENTES
         window.openClientModal = (id = null) => {
             window.editingId = id;
             const c = id ? window.dbData.clients.find(x => x.id === id) : { name: '', phone: '', address: '' };
             document.getElementById('form-modal-title').innerText = id ? "Editar Cliente" : "Nuevo Cliente";
             document.getElementById('form-container').innerHTML = `
-                <input id="f-name" value="${c.name}" placeholder="Nombre completo" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
-                <input id="f-phone" value="${c.phone}" placeholder="Teléfono" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
-                <input id="f-addr" value="${c.address}" placeholder="Dirección" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
+                <input id="f-name" value="${c.name || ''}" placeholder="Nombre completo" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
+                <input id="f-phone" value="${c.phone || ''}" placeholder="Teléfono" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
+                <input id="f-addr" value="${c.address || ''}" placeholder="Dirección" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
             `;
             document.getElementById('btn-form-save').onclick = window.saveClient;
             document.getElementById('modal-form').classList.remove('hidden');
@@ -200,14 +193,14 @@
             window.closeModals();
         };
 
-        // GESTIÓN DE MATERIALES
+        // MATERIALES
         window.openMaterialModal = (id = null) => {
             window.editingId = id;
             const m = id ? window.dbData.materials.find(x => x.id === id) : { name: '', price: '' };
             document.getElementById('form-modal-title').innerText = id ? "Editar Material" : "Nuevo Material";
             document.getElementById('form-container').innerHTML = `
-                <input id="f-m-name" value="${m.name}" placeholder="Nombre Material" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
-                <input id="f-m-price" type="number" step="0.01" value="${m.price}" placeholder="Precio €" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
+                <input id="f-m-name" value="${m.name || ''}" placeholder="Nombre Material" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
+                <input id="f-m-price" type="number" step="0.01" value="${m.price || ''}" placeholder="Precio €" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
             `;
             document.getElementById('btn-form-save').onclick = window.saveMaterial;
             document.getElementById('modal-form').classList.remove('hidden');
@@ -225,27 +218,14 @@
             window.closeModals();
         };
 
-        // GESTIÓN DE PRESUPUESTOS
+        // PROYECTOS
         window.openQuoteModal = () => {
             window.editingId = null;
             window.currentQuoteItems = [];
             document.getElementById('quote-modal-title').innerText = "Nuevo Proyecto";
             document.getElementById('pdf-action-area').classList.add('hidden');
             document.getElementById('q-client').value = "";
-            renderQuoteItems();
-            document.getElementById('modal-quote').classList.remove('hidden');
-        };
-
-        window.viewQuote = (id) => {
-            const q = window.dbData.quotes.find(x => x.id === id);
-            if(!q) return;
-            window.editingId = id;
-            window.currentQuoteItems = [...q.items];
-            document.getElementById('quote-modal-title').innerText = "Editar Proyecto";
-            document.getElementById('pdf-action-area').classList.remove('hidden');
-            const cli = window.dbData.clients.find(c => c.name === q.clientName);
-            if(cli) document.getElementById('q-client').value = cli.id;
-            renderQuoteItems();
+            window.renderQuoteItems();
             document.getElementById('modal-quote').classList.remove('hidden');
         };
 
@@ -261,26 +241,26 @@
                 qty, 
                 total: m.price * qty 
             });
-            renderQuoteItems();
+            window.renderQuoteItems();
         };
 
         window.removeItem = (index) => {
             window.currentQuoteItems.splice(index, 1);
-            renderQuoteItems();
+            window.renderQuoteItems();
         };
 
-        function renderQuoteItems() {
+        window.renderQuoteItems = () => {
             const list = document.getElementById('q-items-list');
             let total = 0;
             list.innerHTML = window.currentQuoteItems.map((it, i) => {
                 total += it.total;
                 return `<div class="bg-slate-50 p-4 rounded-2xl flex justify-between items-center border border-slate-100">
                     <div><p class="font-bold text-slate-800">${it.name}</p><p class="text-xs font-bold text-slate-400">${it.qty} x ${it.price.toFixed(2)}€</p></div>
-                    <div class="flex items-center gap-3"><span class="font-black text-slate-900">${it.total.toFixed(2)}€</span><button onclick="removeItem(${i})" class="text-red-400 p-2 font-bold">✕</button></div>
+                    <div class="flex items-center gap-3"><span class="font-black text-slate-900">${it.total.toFixed(2)}€</span><button onclick="window.removeItem(${i})" class="text-red-400 p-2 font-bold">✕</button></div>
                 </div>`;
             }).join('');
             document.getElementById('q-total-val').innerText = total.toFixed(2) + "€";
-        }
+        };
 
         window.saveQuote = async () => {
             const cliId = document.getElementById('q-client').value;
@@ -300,8 +280,21 @@
             window.closeModals();
         };
 
+        window.viewQuote = (id) => {
+            const q = window.dbData.quotes.find(x => x.id === id);
+            if(!q) return;
+            window.editingId = id;
+            window.currentQuoteItems = [...q.items];
+            document.getElementById('quote-modal-title').innerText = "Editar Proyecto";
+            document.getElementById('pdf-action-area').classList.remove('hidden');
+            const cli = window.dbData.clients.find(c => c.name === q.clientName);
+            if(cli) document.getElementById('q-client').value = cli.id;
+            window.renderQuoteItems();
+            document.getElementById('modal-quote').classList.remove('hidden');
+        };
+
         window.deleteDoc = async (id, colName) => {
-            if(confirm("¿Eliminar para siempre?")) {
+            if(confirm("¿Eliminar este registro permanentemente?")) {
                 await db.collection('artifacts').doc(appId).collection('public').doc('data').collection(colName).doc(id).delete();
             }
         };
@@ -351,62 +344,75 @@
             pdf.save(`Presupuesto_${q.clientName}.pdf`);
         };
 
-        // SINCRONIZACIÓN EN TIEMPO REAL
-        auth.onAuthStateChanged(async (user) => {
-            if (!user) {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await auth.signInWithCustomToken(__initial_auth_token);
-                } else {
-                    await auth.signInAnonymously();
-                }
-                return;
-            }
+        // INICIO FIREBASE Y SINCRONIZACIÓN
+        const initApp = async () => {
+            try {
+                const config = JSON.parse(__firebase_config);
+                firebase.initializeApp(config);
+                db = firebase.firestore();
+                auth = firebase.auth();
 
-            document.getElementById('status-dot').classList.replace('bg-slate-300', 'bg-green-500');
-            const dataPath = db.collection('artifacts').doc(appId).collection('public').doc('data');
+                auth.onAuthStateChanged(async (user) => {
+                    if (!user) {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await auth.signInWithCustomToken(__initial_auth_token);
+                        } else {
+                            await auth.signInAnonymously();
+                        }
+                        return;
+                    }
 
-            // Clientes
-            dataPath.collection('clients').onSnapshot(s => {
-                window.dbData.clients = s.docs.map(d => ({id: d.id, ...d.data()}));
-                document.getElementById('clients-list').innerHTML = window.dbData.clients.map(c => `
-                    <div onclick="openClientModal('${c.id}')" class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
-                        <div><p class="font-bold">${c.name}</p><p class="text-xs text-slate-400">${c.phone}</p></div>
-                        <button onclick="event.stopPropagation(); deleteDoc('${c.id}', 'clients')" class="p-2 text-slate-300 hover:text-red-500 text-lg">🗑️</button>
-                    </div>
-                `).join('');
-                updateSelectors();
-            });
+                    document.getElementById('status-dot').classList.replace('bg-slate-300', 'bg-green-500');
+                    const dataPath = db.collection('artifacts').doc(appId).collection('public').doc('data');
 
-            // Materiales
-            dataPath.collection('materials').onSnapshot(s => {
-                window.dbData.materials = s.docs.map(d => ({id: d.id, ...d.data()}));
-                document.getElementById('materials-list').innerHTML = window.dbData.materials.map(m => `
-                    <div onclick="openMaterialModal('${m.id}')" class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
-                        <div><p class="font-bold">${m.name}</p><p class="text-blue-600 font-bold">${m.price.toFixed(2)}€</p></div>
-                        <button onclick="event.stopPropagation(); deleteDoc('${m.id}', 'materials')" class="p-2 text-slate-300 hover:text-red-500 text-lg">🗑️</button>
-                    </div>
-                `).join('');
-                updateSelectors();
-            });
+                    // Sincronización Clientes
+                    dataPath.collection('clients').onSnapshot(s => {
+                        window.dbData.clients = s.docs.map(d => ({id: d.id, ...d.data()}));
+                        document.getElementById('clients-list').innerHTML = window.dbData.clients.map(c => `
+                            <div onclick="window.openClientModal('${c.id}')" class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
+                                <div><p class="font-bold">${c.name}</p><p class="text-xs text-slate-400">${c.phone}</p></div>
+                                <button onclick="event.stopPropagation(); window.deleteDoc('${c.id}', 'clients')" class="p-2 text-slate-300 hover:text-red-500 text-lg">🗑️</button>
+                            </div>
+                        `).join('');
+                        updateSelectors();
+                    }, e => console.error("Error clientes:", e));
 
-            // Proyectos
-            dataPath.collection('quotes').onSnapshot(s => {
-                window.dbData.quotes = s.docs.map(d => ({id: d.id, ...d.data()}));
-                document.getElementById('quotes-list').innerHTML = window.dbData.quotes.length ? window.dbData.quotes.map(q => `
-                    <div onclick="viewQuote('${q.id}')" class="bg-white p-5 rounded-3xl flex justify-between items-center shadow-sm border border-transparent hover:border-blue-200 active:scale-95 transition-all">
-                        <div><h3 class="font-black text-slate-800">${q.clientName}</h3><p class="text-xl font-black text-blue-600">${q.total.toFixed(2)}€</p></div>
-                        <button onclick="event.stopPropagation(); deleteDoc('${q.id}', 'quotes')" class="p-2 text-slate-200 hover:text-red-400 text-xl">🗑️</button>
-                    </div>
-                `).join('') : '<div class="text-center py-10 text-slate-400 font-medium">No hay proyectos todavía</div>';
-            });
-        });
+                    // Sincronización Materiales
+                    dataPath.collection('materials').onSnapshot(s => {
+                        window.dbData.materials = s.docs.map(d => ({id: d.id, ...d.data()}));
+                        document.getElementById('materials-list').innerHTML = window.dbData.materials.map(m => `
+                            <div onclick="window.openMaterialModal('${m.id}')" class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
+                                <div><p class="font-bold">${m.name}</p><p class="text-blue-600 font-bold">${m.price.toFixed(2)}€</p></div>
+                                <button onclick="event.stopPropagation(); window.deleteDoc('${m.id}', 'materials')" class="p-2 text-slate-300 hover:text-red-500 text-lg">🗑️</button>
+                            </div>
+                        `).join('');
+                        updateSelectors();
+                    }, e => console.error("Error materiales:", e));
+
+                    // Sincronización Proyectos
+                    dataPath.collection('quotes').onSnapshot(s => {
+                        window.dbData.quotes = s.docs.map(d => ({id: d.id, ...d.data()}));
+                        document.getElementById('quotes-list').innerHTML = window.dbData.quotes.length ? window.dbData.quotes.map(q => `
+                            <div onclick="window.viewQuote('${q.id}')" class="bg-white p-5 rounded-3xl flex justify-between items-center shadow-sm border border-transparent hover:border-blue-200 active:scale-95 transition-all">
+                                <div><h3 class="font-black text-slate-800">${q.clientName}</h3><p class="text-xl font-black text-blue-600">${q.total.toFixed(2)}€</p></div>
+                                <button onclick="event.stopPropagation(); window.deleteDoc('${q.id}', 'quotes')" class="p-2 text-slate-200 hover:text-red-400 text-xl">🗑️</button>
+                            </div>
+                        `).join('') : '<div class="text-center py-10 text-slate-400 font-medium">No hay proyectos todavía</div>';
+                    }, e => console.error("Error proyectos:", e));
+                });
+
+            } catch(e) { console.error("Fallo crítico:", e); }
+        };
 
         function updateSelectors() {
             const cS = document.getElementById('q-client');
             const mS = document.getElementById('q-material');
-            if(cS) cS.innerHTML = '<option value="">-- Seleccionar --</option>' + window.dbData.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            if(mS) mS.innerHTML = '<option value="">-- Seleccionar --</option>' + window.dbData.materials.map(m => `<option value="${m.id}">${m.name} (${m.price}€)</option>`).join('');
+            if(cS) cS.innerHTML = '<option value="">-- Seleccionar Cliente --</option>' + window.dbData.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if(mS) mS.innerHTML = '<option value="">-- Seleccionar Material --</option>' + window.dbData.materials.map(m => `<option value="${m.id}">${m.name} (${m.price.toFixed(2)}€)</option>`).join('');
         }
+
+        // Ejecutar inicio
+        initApp();
     </script>
 </body>
 </html>
