@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
-    <!-- Firebase SDKs (Compat Mode for maximum stability) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -23,7 +23,6 @@
 </head>
 <body class="min-h-screen pb-20">
 
-    <!-- Header -->
     <header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-40 flex justify-between items-center">
         <div class="flex items-center gap-2">
             <div class="bg-blue-600 p-2 rounded-lg text-white font-bold">⚡</div>
@@ -33,19 +32,17 @@
     </header>
 
     <main class="max-w-2xl mx-auto p-4">
-        
         <!-- VISTA: PROYECTOS -->
         <section id="view-quotes" class="space-y-4">
             <div class="flex justify-between items-end">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-900">Proyectos</h2>
-                    <p class="text-slate-500 text-sm">Sincronizado en tiempo real</p>
+                    <p class="text-slate-500 text-sm">Gestión de presupuestos</p>
                 </div>
-                <!-- Botón de Nuevo Proyecto -->
                 <button onclick="window.openQuoteModal()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200">Nuevo +</button>
             </div>
             <div id="quotes-list" class="grid gap-3 pt-4">
-                <div class="bg-white p-6 rounded-3xl shadow-sm text-center text-slate-400 italic font-medium">Cargando base de datos...</div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm text-center text-slate-400 italic">Cargando proyectos...</div>
             </div>
         </section>
 
@@ -68,7 +65,6 @@
         </section>
     </main>
 
-    <!-- Navegación -->
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-16 z-50">
         <button onclick="window.switchView('quotes')" id="nav-quotes" class="flex-1 flex flex-col items-center justify-center active-tab h-full">
             <span class="text-xl">📋</span>
@@ -121,7 +117,7 @@
                     <span class="text-slate-400 font-bold uppercase">Total</span>
                     <span id="q-total-val" class="text-4xl font-black text-blue-400">0.00€</span>
                 </div>
-                <button onclick="window.saveQuote()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-lg">GUARDAR PROYECTO</button>
+                <button onclick="window.saveQuote()" id="btn-save-quote" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-lg">GUARDAR PROYECTO</button>
             </div>
         </div>
     </div>
@@ -141,23 +137,32 @@
     <div id="pdf-render-zone"></div>
 
     <script>
-        // CONFIGURACIÓN GLOBAL
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'electri-pro-v1';
+        // CONFIGURACIÓN GLOBAL E INICIALIZACIÓN
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'electri-pro-v2';
         let db, auth;
         
         window.dbData = { clients: [], materials: [], quotes: [] };
         window.currentQuoteItems = [];
         window.editingId = null;
 
-        // INICIALIZACIÓN DE FUNCIONES EN WINDOW (PARA ASEGURAR ACCESO DESDE ONCLICK)
+        // DEFINICIÓN DE FUNCIONES EN WINDOW ANTES DE NADA
         window.switchView = (v) => {
             ['quotes', 'materials', 'clients'].forEach(s => {
-                document.getElementById('view-' + s).classList.add('hidden');
-                document.getElementById('nav-' + s).classList.remove('active-tab', 'text-blue-600');
-                document.getElementById('nav-' + s).classList.add('text-slate-400');
+                const el = document.getElementById('view-' + s);
+                const nav = document.getElementById('nav-' + s);
+                if(el) el.classList.add('hidden');
+                if(nav) {
+                    nav.classList.remove('active-tab', 'text-blue-600');
+                    nav.classList.add('text-slate-400');
+                }
             });
-            document.getElementById('view-' + v).classList.remove('hidden');
-            document.getElementById('nav-' + v).classList.add('active-tab', 'text-blue-600');
+            const activeEl = document.getElementById('view-' + v);
+            const activeNav = document.getElementById('nav-' + v);
+            if(activeEl) activeEl.classList.remove('hidden');
+            if(activeNav) {
+                activeNav.classList.add('active-tab', 'text-blue-600');
+                activeNav.classList.remove('text-slate-400');
+            }
         };
 
         window.closeModals = () => {
@@ -166,7 +171,6 @@
             window.editingId = null;
         };
 
-        // CLIENTES
         window.openClientModal = (id = null) => {
             window.editingId = id;
             const c = id ? window.dbData.clients.find(x => x.id === id) : { name: '', phone: '', address: '' };
@@ -186,14 +190,13 @@
                 phone: document.getElementById('f-phone').value,
                 address: document.getElementById('f-addr').value
             };
-            if(!data.name) return;
+            if(!data.name || !db) return;
             const col = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('clients');
             if(window.editingId) await col.doc(window.editingId).set(data, {merge:true});
             else await col.add(data);
             window.closeModals();
         };
 
-        // MATERIALES
         window.openMaterialModal = (id = null) => {
             window.editingId = id;
             const m = id ? window.dbData.materials.find(x => x.id === id) : { name: '', price: '' };
@@ -211,14 +214,13 @@
                 name: document.getElementById('f-m-name').value,
                 price: parseFloat(document.getElementById('f-m-price').value) || 0
             };
-            if(!data.name) return;
+            if(!data.name || !db) return;
             const col = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('materials');
             if(window.editingId) await col.doc(window.editingId).set(data, {merge:true});
             else await col.add(data);
             window.closeModals();
         };
 
-        // PROYECTOS
         window.openQuoteModal = () => {
             window.editingId = null;
             window.currentQuoteItems = [];
@@ -265,7 +267,7 @@
         window.saveQuote = async () => {
             const cliId = document.getElementById('q-client').value;
             const cli = window.dbData.clients.find(x => x.id === cliId);
-            if(!cli || !window.currentQuoteItems.length) return;
+            if(!cli || !window.currentQuoteItems.length || !db) return;
 
             const payload = {
                 clientName: cli.name, clientPhone: cli.phone, clientAddress: cli.address,
@@ -304,7 +306,7 @@
             if(!q) return;
             const zone = document.getElementById('pdf-render-zone');
             zone.innerHTML = `
-                <div style="padding: 40px; color: #1e293b; font-family: sans-serif;">
+                <div style="padding: 40px; color: #1e293b; font-family: sans-serif; background: white;">
                     <h1 style="font-size: 28px; font-weight: 800; color: #2563eb; margin-bottom: 5px;">ELECTRIQUOTE</h1>
                     <p style="font-size: 12px; color: #64748b; margin-bottom: 30px;">PRESUPUESTO PROFESIONAL</p>
                     <div style="margin: 20px 0; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
@@ -338,14 +340,27 @@
                     </div>
                 </div>
             `;
-            const canvas = await html2canvas(zone, { scale: 2 });
-            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
-            pdf.save(`Presupuesto_${q.clientName}.pdf`);
+            try {
+                const canvas = await html2canvas(zone, { scale: 2 });
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297);
+                pdf.save(`Presupuesto_${q.clientName}.pdf`);
+            } catch(e) { console.error("Error PDF:", e); }
         };
 
-        // INICIO FIREBASE Y SINCRONIZACIÓN
-        const initApp = async () => {
+        const updateSelectors = () => {
+            const cS = document.getElementById('q-client');
+            const mS = document.getElementById('q-material');
+            if(cS) cS.innerHTML = '<option value="">-- Seleccionar Cliente --</option>' + window.dbData.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            if(mS) mS.innerHTML = '<option value="">-- Seleccionar Material --</option>' + window.dbData.materials.map(m => `<option value="${m.id}">${m.name} (${m.price.toFixed(2)}€)</option>`).join('');
+        };
+
+        // INICIO DE APLICACIÓN
+        window.onload = async () => {
+            const dot = document.getElementById('status-dot');
+            dot.className = 'w-3 h-3 rounded-full bg-yellow-500'; // Indicador: Conectando
+
             try {
                 const config = JSON.parse(__firebase_config);
                 firebase.initializeApp(config);
@@ -362,57 +377,50 @@
                         return;
                     }
 
-                    document.getElementById('status-dot').classList.replace('bg-slate-300', 'bg-green-500');
+                    dot.className = 'w-3 h-3 rounded-full bg-green-500'; // Indicador: Listo
                     const dataPath = db.collection('artifacts').doc(appId).collection('public').doc('data');
 
-                    // Sincronización Clientes
+                    // Snapshots persistentes
                     dataPath.collection('clients').onSnapshot(s => {
                         window.dbData.clients = s.docs.map(d => ({id: d.id, ...d.data()}));
-                        document.getElementById('clients-list').innerHTML = window.dbData.clients.map(c => `
-                            <div onclick="window.openClientModal('${c.id}')" class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
-                                <div><p class="font-bold">${c.name}</p><p class="text-xs text-slate-400">${c.phone}</p></div>
-                                <button onclick="event.stopPropagation(); window.deleteDoc('${c.id}', 'clients')" class="p-2 text-slate-300 hover:text-red-500 text-lg">🗑️</button>
+                        const list = document.getElementById('clients-list');
+                        if(list) list.innerHTML = window.dbData.clients.map(c => `
+                            <div onclick="window.openClientModal('${c.id}')" class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border border-transparent hover:border-slate-200">
+                                <div><p class="font-bold text-slate-800">${c.name}</p><p class="text-xs text-slate-400">${c.phone}</p></div>
+                                <button onclick="event.stopPropagation(); window.deleteDoc('${c.id}', 'clients')" class="p-2 text-slate-300 hover:text-red-500">🗑️</button>
                             </div>
                         `).join('');
                         updateSelectors();
-                    }, e => console.error("Error clientes:", e));
+                    });
 
-                    // Sincronización Materiales
                     dataPath.collection('materials').onSnapshot(s => {
                         window.dbData.materials = s.docs.map(d => ({id: d.id, ...d.data()}));
-                        document.getElementById('materials-list').innerHTML = window.dbData.materials.map(m => `
-                            <div onclick="window.openMaterialModal('${m.id}')" class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
-                                <div><p class="font-bold">${m.name}</p><p class="text-blue-600 font-bold">${m.price.toFixed(2)}€</p></div>
-                                <button onclick="event.stopPropagation(); window.deleteDoc('${m.id}', 'materials')" class="p-2 text-slate-300 hover:text-red-500 text-lg">🗑️</button>
+                        const list = document.getElementById('materials-list');
+                        if(list) list.innerHTML = window.dbData.materials.map(m => `
+                            <div onclick="window.openMaterialModal('${m.id}')" class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border border-transparent hover:border-slate-200">
+                                <div><p class="font-bold text-slate-800">${m.name}</p><p class="text-blue-600 font-bold">${m.price.toFixed(2)}€</p></div>
+                                <button onclick="event.stopPropagation(); window.deleteDoc('${m.id}', 'materials')" class="p-2 text-slate-300 hover:text-red-500">🗑️</button>
                             </div>
                         `).join('');
                         updateSelectors();
-                    }, e => console.error("Error materiales:", e));
+                    });
 
-                    // Sincronización Proyectos
                     dataPath.collection('quotes').onSnapshot(s => {
                         window.dbData.quotes = s.docs.map(d => ({id: d.id, ...d.data()}));
-                        document.getElementById('quotes-list').innerHTML = window.dbData.quotes.length ? window.dbData.quotes.map(q => `
+                        const list = document.getElementById('quotes-list');
+                        if(list) list.innerHTML = window.dbData.quotes.length ? window.dbData.quotes.map(q => `
                             <div onclick="window.viewQuote('${q.id}')" class="bg-white p-5 rounded-3xl flex justify-between items-center shadow-sm border border-transparent hover:border-blue-200 active:scale-95 transition-all">
                                 <div><h3 class="font-black text-slate-800">${q.clientName}</h3><p class="text-xl font-black text-blue-600">${q.total.toFixed(2)}€</p></div>
-                                <button onclick="event.stopPropagation(); window.deleteDoc('${q.id}', 'quotes')" class="p-2 text-slate-200 hover:text-red-400 text-xl">🗑️</button>
+                                <button onclick="event.stopPropagation(); window.deleteDoc('${q.id}', 'quotes')" class="p-2 text-slate-200 hover:text-red-400">🗑️</button>
                             </div>
-                        `).join('') : '<div class="text-center py-10 text-slate-400 font-medium">No hay proyectos todavía</div>';
-                    }, e => console.error("Error proyectos:", e));
+                        `).join('') : '<div class="text-center py-10 text-slate-400 font-medium italic">Empieza creando un nuevo proyecto</div>';
+                    });
                 });
-
-            } catch(e) { console.error("Fallo crítico:", e); }
+            } catch(e) {
+                console.error("Firebase no pudo iniciar:", e);
+                dot.className = 'w-3 h-3 rounded-full bg-red-500'; // Indicador: Error
+            }
         };
-
-        function updateSelectors() {
-            const cS = document.getElementById('q-client');
-            const mS = document.getElementById('q-material');
-            if(cS) cS.innerHTML = '<option value="">-- Seleccionar Cliente --</option>' + window.dbData.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            if(mS) mS.innerHTML = '<option value="">-- Seleccionar Material --</option>' + window.dbData.materials.map(m => `<option value="${m.id}">${m.name} (${m.price.toFixed(2)}€)</option>`).join('');
-        }
-
-        // Ejecutar inicio
-        initApp();
     </script>
 </body>
 </html>
