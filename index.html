@@ -39,14 +39,14 @@
             <button onclick="window.openQuoteModal()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold">Nuevo +</button>
         </div>
         <div id="quotes-list" class="grid gap-3 pt-4">
-            <div class="bg-white p-6 rounded-3xl text-center text-slate-400">Cargando...</div>
+            <div class="bg-white p-6 rounded-3xl text-center text-slate-400">Cargando proyectos...</div>
         </div>
     </section>
 
     <!-- MATERIALES -->
     <section id="view-materials" class="hidden space-y-4">
         <div class="flex justify-between items-end">
-            <h2 class="text-2xl font-bold">Catálogo</h2>
+            <h2 class="text-2xl font-bold text-slate-900">Catálogo</h2>
             <button onclick="window.openMaterialModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Añadir</button>
         </div>
         <div id="materials-list"></div>
@@ -55,7 +55,7 @@
     <!-- CLIENTES -->
     <section id="view-clients" class="hidden space-y-4">
         <div class="flex justify-between items-end">
-            <h2 class="text-2xl font-bold">Clientes</h2>
+            <h2 class="text-2xl font-bold text-slate-900">Clientes</h2>
             <button onclick="window.openClientModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Nuevo</button>
         </div>
         <div id="clients-list"></div>
@@ -64,15 +64,33 @@
 </main>
 
 <!-- NAV -->
-<nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around h-16">
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-16 z-50">
     <button onclick="window.switchView('quotes')" id="nav-quotes" class="flex-1 active-tab">📋</button>
     <button onclick="window.switchView('materials')" id="nav-materials" class="flex-1">📦</button>
     <button onclick="window.switchView('clients')" id="nav-clients" class="flex-1">👥</button>
 </nav>
 
-<!-- MODALS -->
-<div id="modal-quote" class="hidden"></div>
-<div id="modal-form" class="hidden"></div>
+<!-- MODAL CLIENT -->
+<div id="modal-form" class="fixed inset-0 bg-slate-900/80 hidden z-[200] items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-4">
+        <h3 id="form-title" class="font-bold mb-3">Formulario</h3>
+        <input id="f-name" class="w-full p-2 mb-2 border" placeholder="Nombre">
+        <input id="f-phone" class="w-full p-2 mb-2 border" placeholder="Teléfono">
+        <input id="f-addr" class="w-full p-2 mb-2 border" placeholder="Dirección">
+        <button onclick="window.saveClient()" class="bg-blue-600 text-white w-full py-2">Guardar</button>
+    </div>
+</div>
+
+<!-- MODAL MATERIAL -->
+<div id="modal-material" class="fixed inset-0 bg-slate-900/80 hidden z-[200] items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-4">
+        <h3 class="font-bold mb-3">Material</h3>
+        <input id="m-name" class="w-full p-2 mb-2 border" placeholder="Nombre">
+        <input id="m-price" type="number" class="w-full p-2 mb-2 border" placeholder="Precio">
+        <button onclick="window.saveMaterial()" class="bg-blue-600 text-white w-full py-2">Guardar</button>
+    </div>
+</div>
+
 <div id="pdf-render-zone"></div>
 
 <script type="module">
@@ -87,83 +105,100 @@ window.dbData = { clients: [], materials: [], quotes: [] };
 window.currentQuoteItems = [];
 window.editingId = null;
 
-// 🔥 FIREBASE CONFIG FIX REAL
-const firebaseConfig = (typeof __firebase_config !== 'undefined')
+// 🔥 FIREBASE CONFIG FIX
+const firebaseConfig = typeof __firebase_config !== 'undefined'
     ? JSON.parse(__firebase_config)
     : {
         apiKey: "AIzaSyBuX9O3WBR5zX_L-WYdRiwirBl50aUFzlg",
         authDomain: "electriquote-b92c3.firebaseapp.com",
-        projectId: "electriquote-b92c3,
+        projectId: "electriquote-b92c3",
         storageBucket: "electriquote-b92c3.firebasestorage.app",
         messagingSenderId: "1050154424016",
         appId: "1:1050154424016:web:10e5250c9b78c17bb7b0d5"
     };
 
-function switchView(v) {
+// -------------------- UI --------------------
+window.switchView = (v) => {
     ['quotes','materials','clients'].forEach(s => {
         document.getElementById('view-'+s)?.classList.add('hidden');
         document.getElementById('nav-'+s)?.classList.remove('active-tab');
     });
     document.getElementById('view-'+v)?.classList.remove('hidden');
     document.getElementById('nav-'+v)?.classList.add('active-tab');
-}
-window.switchView = switchView;
-
-window.closeModals = () => {
-    document.getElementById('modal-quote').classList.add('hidden');
-    document.getElementById('modal-form').classList.add('hidden');
 };
 
-// ================= FIREBASE START =================
+window.closeModals = () => {
+    document.getElementById('modal-form').classList.add('hidden');
+    document.getElementById('modal-material').classList.add('hidden');
+};
 
-async function start() {
-    const dot = document.getElementById('status-dot');
-    dot.className = 'w-3 h-3 bg-yellow-500 rounded-full';
+// ---------------- CLIENT ----------------
+window.openClientModal = (id=null) => {
+    window.editingId = id;
+    document.getElementById('modal-form').classList.remove('hidden');
+};
 
+window.saveClient = async () => {
+    const data = {
+        name: document.getElementById('f-name').value,
+        phone: document.getElementById('f-phone').value,
+        address: document.getElementById('f-addr').value
+    };
+    const ref = collection(db,'artifacts',appId,'public','data','clients');
+    if(window.editingId) await setDoc(doc(ref,window.editingId),data,{merge:true});
+    else await addDoc(ref,data);
+    window.closeModals();
+};
+
+// ---------------- MATERIAL ----------------
+window.openMaterialModal = () => {
+    document.getElementById('modal-material').classList.remove('hidden');
+};
+
+window.saveMaterial = async () => {
+    const data = {
+        name: document.getElementById('m-name').value,
+        price: parseFloat(document.getElementById('m-price').value||0)
+    };
+    const ref = collection(db,'artifacts',appId,'public','data','materials');
+    await addDoc(ref,data);
+    window.closeModals();
+};
+
+// ---------------- FIREBASE ----------------
+async function start(){
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
 
-    try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
+    try{
+        if(typeof __initial_auth_token !== 'undefined'){
+            await signInWithCustomToken(auth,__initial_auth_token);
         } else {
             await signInAnonymously(auth);
         }
-    } catch (e) {
-        console.error(e);
+    }catch(e){
         await signInAnonymously(auth);
     }
 
-    onAuthStateChanged(auth, (user) => {
-        if (!user) return;
+    onAuthStateChanged(auth,(user)=>{
+        if(!user) return;
 
-        dot.className = 'w-3 h-3 bg-green-500 rounded-full';
-
-        onSnapshot(collection(db,'artifacts',appId,'public','data','clients'), s => {
-            window.dbData.clients = s.docs.map(d => ({id:d.id,...d.data()}));
-            document.getElementById('clients-list').innerHTML = window.dbData.clients.map(c=>
-                `<div class="p-3 bg-white mb-2 rounded-xl">${c.name}</div>`
-            ).join('');
+        onSnapshot(collection(db,'artifacts',appId,'public','data','clients'),s=>{
+            window.dbData.clients = s.docs.map(d=>({id:d.id,...d.data()}));
         });
 
-        onSnapshot(collection(db,'artifacts',appId,'public','data','materials'), s => {
-            window.dbData.materials = s.docs.map(d => ({id:d.id,...d.data()}));
-            document.getElementById('materials-list').innerHTML = window.dbData.materials.map(m=>
-                `<div class="p-3 bg-white mb-2 rounded-xl">${m.name} - ${m.price}€</div>`
-            ).join('');
+        onSnapshot(collection(db,'artifacts',appId,'public','data','materials'),s=>{
+            window.dbData.materials = s.docs.map(d=>({id:d.id,...d.data()}));
         });
 
-        onSnapshot(collection(db,'artifacts',appId,'public','data','quotes'), s => {
-            window.dbData.quotes = s.docs.map(d => ({id:d.id,...d.data()}));
-            document.getElementById('quotes-list').innerHTML = window.dbData.quotes.map(q=>
-                `<div class="p-4 bg-white mb-2 rounded-xl">${q.clientName} - ${q.total}€</div>`
-            ).join('');
+        onSnapshot(collection(db,'artifacts',appId,'public','data','quotes'),s=>{
+            window.dbData.quotes = s.docs.map(d=>({id:d.id,...d.data()}));
         });
     });
 }
 
-window.addEventListener('load', start);
+window.addEventListener('load',start);
 </script>
 
 </body>
