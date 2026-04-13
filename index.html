@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ElectriQuote Pro - Sistema de Gestión</title>
-
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -49,7 +49,7 @@
             <h2 class="text-2xl font-bold text-slate-900">Catálogo</h2>
             <button onclick="window.openMaterialModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Añadir</button>
         </div>
-        <div id="materials-list"></div>
+        <div id="materials-list" class="grid gap-2"></div>
     </section>
 
     <!-- CLIENTES -->
@@ -58,7 +58,7 @@
             <h2 class="text-2xl font-bold text-slate-900">Clientes</h2>
             <button onclick="window.openClientModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Nuevo</button>
         </div>
-        <div id="clients-list"></div>
+        <div id="clients-list" class="grid gap-2"></div>
     </section>
 
 </main>
@@ -70,24 +70,37 @@
     <button onclick="window.switchView('clients')" id="nav-clients" class="flex-1">👥</button>
 </nav>
 
-<!-- MODAL CLIENT -->
-<div id="modal-form" class="fixed inset-0 bg-slate-900/80 hidden z-[200] items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-4">
-        <h3 id="form-title" class="font-bold mb-3">Formulario</h3>
-        <input id="f-name" class="w-full p-2 mb-2 border" placeholder="Nombre">
-        <input id="f-phone" class="w-full p-2 mb-2 border" placeholder="Teléfono">
-        <input id="f-addr" class="w-full p-2 mb-2 border" placeholder="Dirección">
-        <button onclick="window.saveClient()" class="bg-blue-600 text-white w-full py-2">Guardar</button>
+<!-- MODAL QUOTE (RESTO ORIGINAL SIMPLIFICADO NO AFECTA BUGS) -->
+<div id="modal-quote" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center"></div>
+
+<!-- MODAL FORM CLIENTES FIX -->
+<div id="modal-form" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4 z-[200]">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b font-bold text-center" id="form-title">Cliente</div>
+        <div class="p-6 space-y-4">
+            <input id="f-name" placeholder="Nombre" class="w-full p-3 bg-slate-100 rounded-xl">
+            <input id="f-phone" placeholder="Teléfono" class="w-full p-3 bg-slate-100 rounded-xl">
+            <input id="f-addr" placeholder="Dirección" class="w-full p-3 bg-slate-100 rounded-xl">
+        </div>
+        <div class="p-4 bg-slate-50 flex gap-2">
+            <button onclick="window.closeModals()" class="flex-1">Cancelar</button>
+            <button onclick="window.saveClient()" class="flex-1 bg-blue-600 text-white rounded-xl">Guardar</button>
+        </div>
     </div>
 </div>
 
-<!-- MODAL MATERIAL -->
-<div id="modal-material" class="fixed inset-0 bg-slate-900/80 hidden z-[200] items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-4">
-        <h3 class="font-bold mb-3">Material</h3>
-        <input id="m-name" class="w-full p-2 mb-2 border" placeholder="Nombre">
-        <input id="m-price" type="number" class="w-full p-2 mb-2 border" placeholder="Precio">
-        <button onclick="window.saveMaterial()" class="bg-blue-600 text-white w-full py-2">Guardar</button>
+<!-- MODAL MATERIAL FIX -->
+<div id="modal-material" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4 z-[200]">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b font-bold text-center">Material</div>
+        <div class="p-6 space-y-4">
+            <input id="m-name" placeholder="Nombre" class="w-full p-3 bg-slate-100 rounded-xl">
+            <input id="m-price" type="number" placeholder="Precio" class="w-full p-3 bg-slate-100 rounded-xl">
+        </div>
+        <div class="p-4 bg-slate-50 flex gap-2">
+            <button onclick="window.closeModals()" class="flex-1">Cancelar</button>
+            <button onclick="window.saveMaterial()" class="flex-1 bg-blue-600 text-white rounded-xl">Guardar</button>
+        </div>
     </div>
 </div>
 
@@ -105,7 +118,6 @@ window.dbData = { clients: [], materials: [], quotes: [] };
 window.currentQuoteItems = [];
 window.editingId = null;
 
-// 🔥 FIREBASE CONFIG FIX
 const firebaseConfig = typeof __firebase_config !== 'undefined'
     ? JSON.parse(__firebase_config)
     : {
@@ -117,7 +129,7 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
         appId: "1:1050154424016:web:10e5250c9b78c17bb7b0d5"
     };
 
-// -------------------- UI --------------------
+// ---------------- UI ----------------
 window.switchView = (v) => {
     ['quotes','materials','clients'].forEach(s => {
         document.getElementById('view-'+s)?.classList.add('hidden');
@@ -132,9 +144,12 @@ window.closeModals = () => {
     document.getElementById('modal-material').classList.add('hidden');
 };
 
-// ---------------- CLIENT ----------------
-window.openClientModal = (id=null) => {
-    window.editingId = id;
+// FIX CRÍTICO: reset inputs
+window.openClientModal = () => {
+    window.editingId = null;
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-phone').value = '';
+    document.getElementById('f-addr').value = '';
     document.getElementById('modal-form').classList.remove('hidden');
 };
 
@@ -150,8 +165,11 @@ window.saveClient = async () => {
     window.closeModals();
 };
 
-// ---------------- MATERIAL ----------------
+// FIX CRÍTICO: reset inputs
 window.openMaterialModal = () => {
+    window.editingId = null;
+    document.getElementById('m-name').value = '';
+    document.getElementById('m-price').value = '';
     document.getElementById('modal-material').classList.remove('hidden');
 };
 
@@ -165,7 +183,6 @@ window.saveMaterial = async () => {
     window.closeModals();
 };
 
-// ---------------- FIREBASE ----------------
 async function start(){
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
