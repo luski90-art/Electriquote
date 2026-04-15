@@ -31,6 +31,33 @@
 </head>
 <body class="min-h-screen pb-24 text-slate-800">
 
+<!-- PANTALLA DE AUTENTICACIÓN (LOGIN/REGISTRO) -->
+<div id="auth-screen" class="fixed inset-0 bg-slate-900 z-[999] flex items-center justify-center p-4 transition-opacity duration-300">
+    <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden p-8 fade-in text-center">
+        <div class="bg-blue-600 w-16 h-16 rounded-2xl text-white flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200">
+            <i data-lucide="zap" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">ELECTRI<span class="text-blue-600">QUOTE</span></h2>
+        <p class="text-slate-500 text-sm mb-8 mt-1">Inicia sesión para sincronizar tus datos</p>
+        
+        <div class="space-y-4 text-left">
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Correo Electrónico</label>
+                <input id="auth-email" type="email" placeholder="tu@correo.com" class="w-full p-4 mt-1 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Contraseña</label>
+                <input id="auth-pass" type="password" placeholder="••••••••" class="w-full p-4 mt-1 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 outline-none">
+            </div>
+            
+            <div class="pt-4 space-y-3">
+                <button onclick="window.login()" class="w-full py-4 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200 transition-all">Iniciar Sesión</button>
+                <button onclick="window.register()" class="w-full py-4 font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all">Crear Cuenta Nueva</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm">
     <div class="flex items-center gap-3">
         <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-md shadow-blue-200">
@@ -38,8 +65,11 @@
         </div>
         <h1 class="text-xl font-extrabold tracking-tight text-slate-800">ELECTRI<span class="text-blue-600">QUOTE</span></h1>
     </div>
-    <div id="connection-status" class="flex items-center gap-2">
-        <span id="sync-badge" class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full border border-slate-200 uppercase tracking-tighter">Conectando...</span>
+    <div class="flex items-center gap-3">
+        <span id="user-email-display" class="hidden md:inline text-xs font-bold text-slate-500"></span>
+        <button onclick="window.logout()" class="text-slate-400 hover:text-red-500 transition-colors p-2 bg-slate-50 rounded-xl" title="Cerrar Sesión">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+        </button>
     </div>
 </header>
 
@@ -53,7 +83,7 @@
                 <p class="text-slate-500 text-sm mt-1">Gestión de presupuestos</p>
             </div>
             <button onclick="window.openQuoteModal()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white px-5 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200 flex items-center gap-2">
-                <i data-lucide="plus-circle" class="w-5 h-5"></i> <span>Nuevo</span>
+                <i data-lucide="plus-circle" class="w-5 h-5"></i> <span class="hidden sm:inline">Nuevo</span>
             </button>
         </div>
         <div id="quotes-list" class="grid gap-4 pt-2"></div>
@@ -105,6 +135,27 @@
     </button>
 </nav>
 
+<!-- ================= MODALES ================= -->
+
+<!-- MODAL: PREVISUALIZAR PDF -->
+<div id="modal-pdf-preview" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm hidden flex-col items-center justify-center p-2 sm:p-4 z-[200]">
+    <div class="bg-white w-full max-w-3xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-[90vh] fade-in">
+        <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
+            <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="file-text" class="text-blue-600"></i> Previsualización</h3>
+            <button onclick="window.closeModals()" class="text-slate-400 bg-white p-2 rounded-lg shadow-sm border"><i data-lucide="x"></i></button>
+        </div>
+        <div class="flex-1 bg-slate-100 p-2">
+            <iframe id="pdf-iframe" class="w-full h-full rounded-xl border-none shadow-inner bg-white"></iframe>
+        </div>
+        <div class="p-4 bg-slate-50 border-t flex gap-3">
+            <button onclick="window.closeModals()" class="flex-1 py-3 font-bold text-slate-600 bg-slate-200 rounded-xl">Cerrar</button>
+            <button id="btn-download-preview" class="flex-1 py-3 font-bold bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-200 flex justify-center items-center gap-2">
+                <i data-lucide="download" class="w-5 h-5"></i> Descargar PDF
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL: CLIENTE -->
 <div id="modal-form" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex-col items-center justify-center p-4 z-[100]">
     <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden fade-in">
@@ -113,9 +164,9 @@
             <button onclick="window.closeModals()" class="text-slate-400"><i data-lucide="x"></i></button>
         </div>
         <div class="p-6 space-y-4">
-            <input id="f-name" placeholder="Nombre completo" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500">
-            <input id="f-phone" placeholder="Teléfono" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500">
-            <input id="f-addr" placeholder="Dirección" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500">
+            <input id="f-name" placeholder="Nombre completo" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 outline-none">
+            <input id="f-phone" placeholder="Teléfono" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 outline-none">
+            <input id="f-addr" placeholder="Dirección" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 outline-none">
         </div>
         <div class="p-4 bg-slate-50 flex gap-3">
             <button onclick="window.closeModals()" class="flex-1 py-3 font-bold text-slate-600 bg-slate-200 rounded-xl">Cancelar</button>
@@ -132,8 +183,8 @@
             <button onclick="window.closeModals()" class="text-slate-400"><i data-lucide="x"></i></button>
         </div>
         <div class="p-6 space-y-4">
-            <input id="m-name" placeholder="Descripción del material" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500">
-            <input id="m-price" type="number" step="0.01" placeholder="Precio unitario (€)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500">
+            <input id="m-name" placeholder="Descripción del material" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 outline-none">
+            <input id="m-price" type="number" step="0.01" placeholder="Precio unitario (€)" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-blue-500 outline-none">
         </div>
         <div class="p-4 bg-slate-50 flex gap-3">
             <button onclick="window.closeModals()" class="flex-1 py-3 font-bold text-slate-600 bg-slate-200 rounded-xl">Cancelar</button>
@@ -147,22 +198,17 @@
     <div class="bg-white w-full max-w-xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] fade-in">
         <div class="p-5 bg-slate-50 border-b flex justify-between items-center">
             <h3 class="font-bold text-lg text-slate-800" id="quote-modal-title">Presupuesto</h3>
-            <div class="flex gap-2">
-                <button id="btn-pdf-quote" onclick="window.downloadPDF()" class="hidden bg-emerald-100 text-emerald-700 p-2 rounded-lg hover:bg-emerald-200 transition-colors">
-                    <i data-lucide="download" class="w-5 h-5"></i>
-                </button>
-                <button onclick="window.closeModals()" class="text-slate-400"><i data-lucide="x"></i></button>
-            </div>
+            <button onclick="window.closeModals()" class="text-slate-400"><i data-lucide="x"></i></button>
         </div>
         
         <div class="p-6 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
-            <input id="q-title" placeholder="Nombre del proyecto" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl">
-            <select id="q-client" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl"></select>
+            <input id="q-title" placeholder="Nombre del proyecto" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+            <select id="q-client" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></select>
 
             <div class="border border-slate-200 p-4 rounded-2xl bg-slate-50 space-y-3">
                 <div class="flex gap-2">
-                    <select id="q-material" class="flex-1 p-2 border border-slate-200 rounded-lg text-sm bg-white"></select>
-                    <input id="q-qty" type="number" value="1" class="w-16 p-2 border border-slate-200 rounded-lg text-sm text-center bg-white">
+                    <select id="q-material" class="flex-1 p-2 border border-slate-200 rounded-lg text-sm bg-white outline-none"></select>
+                    <input id="q-qty" type="number" value="1" class="w-16 p-2 border border-slate-200 rounded-lg text-sm text-center bg-white outline-none">
                     <button onclick="window.addMaterialToQuote()" class="bg-blue-600 text-white px-3 rounded-lg"><i data-lucide="plus"></i></button>
                 </div>
                 <ul id="q-items-list" class="space-y-2"></ul>
@@ -184,11 +230,11 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-// FIX CRÍTICO APLICADO: Importamos signInWithCustomToken para sincronizar identidad
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+// Importamos funciones completas de Auth (Login por Email)
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'electri-pro-v3';
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'electri-pro-v4';
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
     apiKey: "AIzaSyBuX9O3WBR5zX_L-WYdRiwirBl50aUFzlg",
     authDomain: "electriquote-b92c3.firebaseapp.com",
@@ -205,7 +251,7 @@ const showToast = (msg, isError = false) => {
     const t = document.getElementById('toast');
     t.innerText = msg;
     t.className = `fixed top-20 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-xl font-semibold text-sm transition-all duration-300 z-[300] ${isError ? 'bg-red-600' : 'bg-slate-800'} text-white opacity-100`;
-    setTimeout(() => t.classList.add('opacity-0'), 2500);
+    setTimeout(() => t.classList.add('opacity-0'), 3000);
 };
 
 window.switchView = (v) => {
@@ -219,35 +265,68 @@ window.switchView = (v) => {
 
 window.closeModals = () => {
     document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add('hidden'));
+    document.getElementById('pdf-iframe').src = ''; // Limpiar previsualización
     window.editingId = null;
+};
+
+// --- AUTHENTICATION (LOGIN / LOGOUT) ---
+window.login = async () => {
+    const email = document.getElementById('auth-email').value;
+    const pass = document.getElementById('auth-pass').value;
+    if(!email || !pass) return showToast("Introduce correo y contraseña", true);
+    
+    try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        showToast("Sesión iniciada");
+    } catch(e) {
+        showToast("Credenciales incorrectas", true);
+    }
+};
+
+window.register = async () => {
+    const email = document.getElementById('auth-email').value;
+    const pass = document.getElementById('auth-pass').value;
+    if(!email || !pass || pass.length < 6) return showToast("Correo y contraseña válida (>6 carácteres)", true);
+    
+    try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+        showToast("Cuenta creada con éxito");
+    } catch(e) {
+        showToast("Error al crear la cuenta (quizás ya exista)", true);
+    }
+};
+
+window.logout = async () => {
+    await signOut(auth);
+    showToast("Sesión cerrada");
 };
 
 // --- RENDERERS ---
 window.renderClients = () => {
     const list = document.getElementById('clients-list');
     list.innerHTML = window.dbData.clients.map(c => `
-        <div onclick="window.editClient('${c.id}')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center hover:border-blue-300 cursor-pointer">
+        <div onclick="window.editClient('${c.id}')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center hover:border-blue-300 cursor-pointer transition-colors">
             <div>
                 <div class="font-bold text-slate-800 text-lg">${c.name}</div>
-                <div class="text-sm text-slate-500">${c.phone || 'Sin tel.'}</div>
+                <div class="text-sm text-slate-500 flex items-center gap-1 mt-1"><i data-lucide="phone" class="w-3 h-3"></i> ${c.phone || 'Sin tel.'}</div>
             </div>
-            <button onclick="event.stopPropagation(); window.deleteRecord('clients', '${c.id}')" class="p-2 text-red-300 hover:text-red-500"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            <button onclick="event.stopPropagation(); window.deleteRecord('clients', '${c.id}')" class="p-3 text-red-300 hover:text-red-600 bg-slate-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
         </div>
-    `).join('') || '<p class="col-span-full text-center text-slate-400 py-10">Sin clientes</p>';
+    `).join('') || '<p class="col-span-full text-center text-slate-400 py-10 border border-dashed rounded-3xl">Sin clientes</p>';
     lucide.createIcons();
 };
 
 window.renderMaterials = () => {
     const list = document.getElementById('materials-list');
     list.innerHTML = window.dbData.materials.map(m => `
-        <div onclick="window.editMaterial('${m.id}')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center hover:border-blue-300 cursor-pointer">
+        <div onclick="window.editMaterial('${m.id}')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center hover:border-blue-300 cursor-pointer transition-colors">
             <div>
                 <div class="font-bold text-slate-800">${m.name}</div>
-                <div class="text-blue-600 font-extrabold">${m.price.toFixed(2)} €</div>
+                <div class="text-blue-600 font-extrabold text-lg mt-1">${m.price.toFixed(2)} €</div>
             </div>
-            <button onclick="event.stopPropagation(); window.deleteRecord('materials', '${m.id}')" class="p-2 text-red-300 hover:text-red-500"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            <button onclick="event.stopPropagation(); window.deleteRecord('materials', '${m.id}')" class="p-3 text-red-300 hover:text-red-600 bg-slate-50 rounded-xl transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
         </div>
-    `).join('') || '<p class="col-span-full text-center text-slate-400 py-10">Sin materiales</p>';
+    `).join('') || '<p class="col-span-full text-center text-slate-400 py-10 border border-dashed rounded-3xl">Sin materiales</p>';
     lucide.createIcons();
 };
 
@@ -256,24 +335,34 @@ window.renderQuotes = () => {
     list.innerHTML = window.dbData.quotes.map(q => {
         const client = window.dbData.clients.find(c => c.id === q.clientId)?.name || 'Desconocido';
         return `
-        <div onclick="window.editQuote('${q.id}')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center hover:shadow-md cursor-pointer relative overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
-            <div>
-                <div class="font-bold text-slate-900 text-lg">${q.title}</div>
-                <div class="text-sm text-slate-500">${client}</div>
+        <div onclick="window.editQuote('${q.id}')" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md cursor-pointer relative overflow-hidden transition-all">
+            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
+            <div class="flex justify-between items-start pl-2">
+                <div>
+                    <div class="font-bold text-slate-900 text-lg leading-tight">${q.title}</div>
+                    <div class="text-sm text-slate-500 mt-1 flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i> ${client}</div>
+                </div>
+                <div class="text-right">
+                    <div class="font-extrabold text-xl text-slate-800">${q.total.toFixed(2)} €</div>
+                </div>
             </div>
-            <div class="text-right">
-                <div class="font-extrabold text-xl text-blue-700">${q.total.toFixed(2)} €</div>
-                <button onclick="event.stopPropagation(); window.deleteRecord('quotes', '${q.id}')" class="text-xs text-red-400 font-bold uppercase mt-1">Eliminar</button>
+            <!-- BOTONERA DE ACCIONES EN LA TARJETA -->
+            <div class="mt-4 pt-3 border-t border-slate-50 flex gap-2 justify-end pl-2">
+                <button onclick="event.stopPropagation(); window.previewPDF('${q.id}')" class="flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors">
+                    <i data-lucide="eye" class="w-4 h-4"></i> Ver PDF
+                </button>
+                <button onclick="event.stopPropagation(); window.deleteRecord('quotes', '${q.id}')" class="flex items-center gap-1 text-xs font-bold text-red-500 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition-colors">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
             </div>
         </div>
-    `}).join('') || '<p class="text-center text-slate-400 py-10">No hay presupuestos</p>';
+    `}).join('') || '<p class="text-center text-slate-400 py-10 border border-dashed rounded-3xl">No hay presupuestos guardados</p>';
     lucide.createIcons();
 };
 
-// --- DATA LOGIC ---
+// --- DATA LOGIC (CRUD) ---
 window.saveClient = async () => {
-    if(!currentUser) return showToast("Error de sincronización", true);
+    if(!currentUser) return;
     const name = document.getElementById('f-name').value.trim();
     if(!name) return showToast("Nombre requerido", true);
     const data = { name, phone: document.getElementById('f-phone').value, address: document.getElementById('f-addr').value };
@@ -294,6 +383,7 @@ window.editClient = (id) => {
     document.getElementById('client-title').innerText = "Editar Cliente";
     document.getElementById('btn-save-client').innerText = "Actualizar";
     document.getElementById('modal-form').classList.remove('hidden');
+    document.getElementById('modal-form').classList.add('flex');
 };
 
 window.openClientModal = () => {
@@ -304,10 +394,11 @@ window.openClientModal = () => {
     document.getElementById('client-title').innerText = "Nuevo Cliente";
     document.getElementById('btn-save-client').innerText = "Guardar";
     document.getElementById('modal-form').classList.remove('hidden');
+    document.getElementById('modal-form').classList.add('flex');
 };
 
 window.saveMaterial = async () => {
-    if(!currentUser) return showToast("Error de sincronización", true);
+    if(!currentUser) return;
     const name = document.getElementById('m-name').value.trim();
     const price = parseFloat(document.getElementById('m-price').value || 0);
     if(!name) return showToast("Nombre requerido", true);
@@ -328,6 +419,7 @@ window.editMaterial = (id) => {
     document.getElementById('material-title').innerText = "Editar Material";
     document.getElementById('btn-save-material').innerText = "Actualizar";
     document.getElementById('modal-material').classList.remove('hidden');
+    document.getElementById('modal-material').classList.add('flex');
 };
 
 window.openMaterialModal = () => {
@@ -337,6 +429,7 @@ window.openMaterialModal = () => {
     document.getElementById('material-title').innerText = "Nuevo Material";
     document.getElementById('btn-save-material').innerText = "Guardar";
     document.getElementById('modal-material').classList.remove('hidden');
+    document.getElementById('modal-material').classList.add('flex');
 };
 
 // --- QUOTE LOGIC ---
@@ -346,13 +439,13 @@ window.openQuoteModal = () => {
     document.getElementById('q-title').value = '';
     document.getElementById('quote-modal-title').innerText = "Nuevo Presupuesto";
     document.getElementById('btn-save-quote').innerText = "Crear Proyecto";
-    document.getElementById('btn-pdf-quote').classList.add('hidden');
     
-    document.getElementById('q-client').innerHTML = `<option value="">Seleccionar cliente</option>` + window.dbData.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    document.getElementById('q-client').innerHTML = `<option value="">-- Seleccionar cliente --</option>` + window.dbData.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     document.getElementById('q-material').innerHTML = window.dbData.materials.map(m => `<option value="${m.id}">${m.name} (${m.price.toFixed(2)}€)</option>`).join('');
     
     window.renderQuoteItemsList();
     document.getElementById('modal-quote').classList.remove('hidden');
+    document.getElementById('modal-quote').classList.add('flex');
 };
 
 window.editQuote = (id) => {
@@ -362,7 +455,6 @@ window.editQuote = (id) => {
     
     document.getElementById('quote-modal-title').innerText = "Editar Presupuesto";
     document.getElementById('btn-save-quote').innerText = "Actualizar Proyecto";
-    document.getElementById('btn-pdf-quote').classList.remove('hidden');
     
     document.getElementById('q-title').value = q.title;
     document.getElementById('q-client').innerHTML = window.dbData.clients.map(c => `<option value="${c.id}" ${c.id === q.clientId ? 'selected' : ''}>${c.name}</option>`).join('');
@@ -370,6 +462,7 @@ window.editQuote = (id) => {
     
     window.renderQuoteItemsList();
     document.getElementById('modal-quote').classList.remove('hidden');
+    document.getElementById('modal-quote').classList.add('flex');
 };
 
 window.addMaterialToQuote = () => {
@@ -386,11 +479,14 @@ window.renderQuoteItemsList = () => {
     let total = 0;
     list.innerHTML = window.currentQuoteItems.map((item, i) => {
         total += item.subtotal;
-        return `<li class="flex justify-between items-center text-sm bg-white p-2 rounded-lg border">
-            <span><b>${item.qty}x</b> ${item.name}</span>
+        return `<li class="flex justify-between items-center text-sm bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+            <div>
+                <div class="font-bold">${item.name}</div>
+                <div class="text-xs text-slate-500">${item.qty} uds.</div>
+            </div>
             <div class="flex items-center gap-3">
-                <span class="font-bold">${item.subtotal.toFixed(2)}€</span>
-                <button onclick="window.currentQuoteItems.splice(${i},1); window.renderQuoteItemsList();" class="text-red-400"><i data-lucide="minus-circle" class="w-4 h-4"></i></button>
+                <span class="font-bold text-slate-800">${item.subtotal.toFixed(2)}€</span>
+                <button onclick="window.currentQuoteItems.splice(${i},1); window.renderQuoteItemsList();" class="text-red-400 bg-slate-50 p-1.5 rounded-lg border border-slate-100"><i data-lucide="minus" class="w-4 h-4"></i></button>
             </div>
         </li>`
     }).join('');
@@ -399,10 +495,10 @@ window.renderQuoteItemsList = () => {
 };
 
 window.saveQuote = async () => {
-    if(!currentUser) return showToast("Error de sincronización", true);
+    if(!currentUser) return;
     const title = document.getElementById('q-title').value.trim();
     const clientId = document.getElementById('q-client').value;
-    if(!title || !clientId || window.currentQuoteItems.length === 0) return showToast("Datos incompletos", true);
+    if(!title || !clientId || window.currentQuoteItems.length === 0) return showToast("Faltan datos en el presupuesto", true);
     
     const total = window.currentQuoteItems.reduce((a,b) => a + b.subtotal, 0);
     const data = { title, clientId, items: window.currentQuoteItems, total };
@@ -417,19 +513,21 @@ window.saveQuote = async () => {
 
 window.deleteRecord = async (col, id) => {
     if(!currentUser) return;
+    if(!confirm("¿Seguro que quieres eliminar este elemento?")) return;
     try {
         await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, col, id));
         showToast("Eliminado con éxito");
     } catch(e) { showToast("Error al eliminar", true); }
 };
 
-// --- PDF GENERATOR ---
-window.downloadPDF = () => {
+// --- MOTOR PDF (PREVIEW Y DESCARGA) ---
+const buildPDFDoc = (quoteId) => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const quote = window.dbData.quotes.find(q => q.id === window.editingId);
+    const quote = window.dbData.quotes.find(q => q.id === quoteId);
     const client = window.dbData.clients.find(c => c.id === quote.clientId);
     
+    // Diseño del PDF
     doc.setFillColor(37, 99, 235);
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
@@ -468,53 +566,66 @@ window.downloadPDF = () => {
     doc.text("Este presupuesto tiene una validez de 15 días.", 20, doc.lastAutoTable.finalY + 20);
     doc.text("Gracias por su confianza.", 20, doc.lastAutoTable.finalY + 25);
     
-    doc.save(`Presupuesto_${quote.title.replace(/\s+/g, '_')}.pdf`);
+    return { doc, title: quote.title };
 };
 
-// --- INIT (Motor de Autenticación Unificado Corregido) ---
+// Generar y previsualizar en el modal
+window.previewPDF = (quoteId) => {
+    const { doc, title } = buildPDFDoc(quoteId);
+    
+    // Convertir el PDF a formato URL (Blob) para mostrar en el Iframe
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    
+    document.getElementById('pdf-iframe').src = pdfUrl;
+    
+    // Configurar el botón de descarga desde la previsualización
+    const btnDownload = document.getElementById('btn-download-preview');
+    btnDownload.onclick = () => {
+        doc.save(`Presupuesto_${title.replace(/\s+/g, '_')}.pdf`);
+    };
+
+    document.getElementById('modal-pdf-preview').classList.remove('hidden');
+    document.getElementById('modal-pdf-preview').classList.add('flex');
+};
+
+// --- INIT & AUTHENTICATION LISTENER ---
 async function init() {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
     
-    const badge = document.getElementById('sync-badge');
+    const authScreen = document.getElementById('auth-screen');
+    const userEmailDisplay = document.getElementById('user-email-display');
 
-    // 1. FORZAMOS LA IDENTIDAD ÚNICA ANTES DE CARGAR NADA
-    try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            // Este token garantiza que seas TÚ tanto en PC como en Móvil
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            // Si accedes fuera de tu cuenta, usa un perfil anónimo local
-            await signInAnonymously(auth);
-        }
-    } catch (e) {
-        console.error("Auth init error:", e);
-        await signInAnonymously(auth);
-    }
-    
-    // 2. ESCUCHAMOS LA SESIÓN Y CARGAMOS DATOS
+    // Escuchador del estado de sesión en tiempo real
     onAuthStateChanged(auth, (user) => {
-        if(!user) return;
-        currentUser = user;
-        
-        // Actualizar UI para mostrar que estamos sincronizados
-        badge.innerText = "Sincronizado";
-        badge.classList.replace('text-slate-500', 'text-emerald-600');
-        badge.classList.replace('bg-slate-100', 'bg-emerald-50');
-        badge.classList.replace('border-slate-200', 'border-emerald-100');
-        
-        // Listeners en tiempo real aislados a tu UID unificado
-        const listen = (c, fn) => onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, c), s => {
-            window.dbData[c] = s.docs.map(d => ({id: d.id, ...d.data()}));
-            fn();
-        }, (error) => {
-            console.error(`Error sincronizando ${c}:`, error);
-        });
-        
-        listen('clients', window.renderClients);
-        listen('materials', window.renderMaterials);
-        listen('quotes', window.renderQuotes);
+        if(user) {
+            // Usuario logueado: Ocultamos pantalla login y cargamos base de datos
+            currentUser = user;
+            authScreen.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => authScreen.classList.add('hidden'), 300); // Dar tiempo a la animación
+            
+            userEmailDisplay.innerText = user.email; // Mostrar en la cabecera
+            
+            // Listeners vinculados estrictamente al ID del usuario (Garantiza sincronización total PC/Móvil)
+            const listen = (c, fn) => onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, c), s => {
+                window.dbData[c] = s.docs.map(d => ({id: d.id, ...d.data()}));
+                fn();
+            });
+            
+            listen('clients', window.renderClients);
+            listen('materials', window.renderMaterials);
+            listen('quotes', window.renderQuotes);
+        } else {
+            // Sin usuario: Mostrar pantalla login y resetear datos locales
+            currentUser = null;
+            authScreen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            userEmailDisplay.innerText = '';
+            
+            window.dbData = { clients: [], materials: [], quotes: [] };
+            window.renderClients(); window.renderMaterials(); window.renderQuotes();
+        }
     });
 }
 
