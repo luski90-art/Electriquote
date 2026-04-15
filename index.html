@@ -66,11 +66,9 @@
         </div>
         <h1 class="text-lg font-black tracking-tighter text-slate-900">ELECTRI<span class="text-slate-500">QUOTE</span></h1>
     </div>
-    <div class="flex items-center gap-2">
-        <div id="sync-indicator" class="w-2 h-2 rounded-full bg-slate-400"></div>
-        <button onclick="window.logout()" class="text-slate-400 hover:text-red-500 p-2 rounded-xl bg-slate-50 transition-colors">
-            <i data-lucide="log-out" class="w-5 h-5"></i>
-        </button>
+    <div class="flex items-center gap-3 pr-2">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest hidden sm:block">Conectado</span>
+        <div id="sync-indicator" class="w-3 h-3 rounded-full bg-slate-400 shadow-sm border border-slate-200"></div>
     </div>
 </header>
 
@@ -234,7 +232,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // SEGURIDAD: Uso de variables de entorno para proteger credenciales.
@@ -266,7 +264,7 @@ const toast = (m, err = false) => {
 };
 
 // --- AUTH LOGIC (SEGURIDAD MEJORADA) ---
-// Autenticación automática y segura con tokens (Adiós contraseñas en texto plano)
+// Autenticación automática y segura con tokens
 const initAuth = async () => {
     try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -278,11 +276,6 @@ const initAuth = async () => {
         console.error("Auth error:", error);
         toast("Error de conexión segura", true);
     }
-};
-
-window.logout = () => {
-    signOut(auth);
-    location.reload();
 };
 
 // --- NAVIGATION & MODALS ---
@@ -307,7 +300,7 @@ window.closeModals = () => {
     window.editingId = null;
 };
 
-// --- CLIENT ACTIONS (MODIFICADO: Teléfono y Dirección) ---
+// --- CLIENT ACTIONS ---
 window.openClientModal = (id = null) => {
     const title = document.getElementById('client-modal-title');
     const nameInput = document.getElementById('client-name');
@@ -515,7 +508,7 @@ window.openQuoteModal = () => {
     document.getElementById('modal-quote').classList.add('flex');
 };
 
-// --- PDF ENGINE (DISEÑO PROFESIONAL MINIMALISTA) ---
+// --- PDF ENGINE (DISEÑO PROFESIONAL MINIMALISTA Y ALINEADO) ---
 window.previewPDF = (id) => {
     const q = window.dbData.quotes.find(x => x.id === id);
     const client = window.dbData.clients.find(x => x.id === q.clientId);
@@ -568,10 +561,16 @@ window.previewPDF = (id) => {
     if(client?.address) { doc.text(client.address, 130, currentY); currentY += 5; }
     if(client?.phone) { doc.text(`Tel: ${client.phone}`, 130, currentY); }
     
-    // Tabla Elegante (Tema Plain con diseño custom)
+    // Tabla Elegante (Tema Plain con diseño custom y cabeceras alineadas)
     doc.autoTable({
         startY: 75,
-        head: [['CONCEPTO', 'CANTIDAD', 'PRECIO UN.', 'IMPORTE']],
+        // Usamos objetos en la cabecera para forzar la alineación individual de cada título
+        head: [[
+            { content: 'CONCEPTO', styles: { halign: 'left' } },
+            { content: 'CANTIDAD', styles: { halign: 'center' } },
+            { content: 'PRECIO UN.', styles: { halign: 'right' } },
+            { content: 'IMPORTE', styles: { halign: 'right' } }
+        ]],
         body: q.items.map(i => [i.name, i.qty.toString(), i.price.toFixed(2)+' €', i.subtotal.toFixed(2)+' €']),
         foot: [['', '', 'TOTAL A ABONAR', q.total.toFixed(2)+' €']],
         theme: 'plain',
@@ -597,9 +596,9 @@ window.previewPDF = (id) => {
             fillColor: [241, 245, 249] // Slate-100
         },
         columnStyles: {
-            1: { halign: 'center' },
-            2: { halign: 'right' },
-            3: { halign: 'right' }
+            1: { halign: 'center' }, // Centra la columna de Cantidad
+            2: { halign: 'right' },  // Alinea a la derecha Precios
+            3: { halign: 'right' }   // Alinea a la derecha Importes
         }
     });
 
