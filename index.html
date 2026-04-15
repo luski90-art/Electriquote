@@ -6,113 +6,228 @@
     <title>ElectriQuote Pro - Sistema de Gestión</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
+    <!-- Iconos para una interfaz más profesional -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
-        .active-tab { color: #2563eb; border-top: 3px solid #2563eb; background: white; }
-        #pdf-render-zone { position: absolute; left: -9999px; top: 0; width: 210mm; background: white; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        .active-tab { 
+            color: #2563eb; 
+            border-top: 3px solid #2563eb; 
+            background: #eff6ff; 
+        }
         input, select, button { outline: none !important; }
+        
+        /* Animaciones suaves */
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="min-h-screen pb-20">
+<body class="min-h-screen pb-24 text-slate-800">
 
-<header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-40 flex justify-between items-center">
-    <div class="flex items-center gap-2">
-        <div class="bg-blue-600 p-2 rounded-lg text-white font-bold">⚡</div>
-        <h1 class="text-lg font-extrabold tracking-tight text-slate-800">ELECTRI<span class="text-blue-600">QUOTE</span></h1>
+<header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm">
+    <div class="flex items-center gap-3">
+        <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-md shadow-blue-200">
+            <i data-lucide="zap" class="w-5 h-5"></i>
+        </div>
+        <h1 class="text-xl font-extrabold tracking-tight text-slate-800">ELECTRI<span class="text-blue-600">QUOTE</span></h1>
     </div>
-    <div id="status-dot" class="w-3 h-3 rounded-full bg-slate-300"></div>
+    <div class="flex items-center gap-2">
+        <span id="user-status-text" class="text-xs font-semibold text-slate-500">Conectando...</span>
+        <div id="status-dot" class="w-3 h-3 rounded-full bg-slate-300 animate-pulse"></div>
+    </div>
 </header>
 
-<main class="max-w-2xl mx-auto p-4">
+<main class="max-w-3xl mx-auto p-4 md:p-6">
 
-    <!-- PROYECTOS -->
-    <section id="view-quotes" class="space-y-4">
+    <!-- SECCIÓN: PROYECTOS / PRESUPUESTOS -->
+    <section id="view-quotes" class="space-y-6 fade-in">
         <div class="flex justify-between items-end">
             <div>
-                <h2 class="text-2xl font-bold text-slate-900">Proyectos</h2>
-                <p class="text-slate-500 text-sm">Gestión de presupuestos</p>
+                <h2 class="text-3xl font-bold text-slate-900">Proyectos</h2>
+                <p class="text-slate-500 text-sm mt-1">Gestión de presupuestos</p>
             </div>
-            <button onclick="window.openQuoteModal()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold">Nuevo +</button>
+            <button onclick="window.openQuoteModal()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white px-5 py-3 rounded-2xl font-bold shadow-lg shadow-blue-200 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i> <span class="hidden sm:inline">Nuevo</span>
+            </button>
         </div>
-        <div id="quotes-list" class="grid gap-3 pt-4">
-            <div class="bg-white p-6 rounded-3xl text-center text-slate-400">Cargando proyectos...</div>
+        <div id="quotes-list" class="grid gap-4 pt-2">
+            <div class="bg-white p-8 rounded-3xl text-center text-slate-400 border border-slate-100 border-dashed">
+                Cargando proyectos...
+            </div>
         </div>
     </section>
 
-    <!-- MATERIALES -->
-    <section id="view-materials" class="hidden space-y-4">
+    <!-- SECCIÓN: MATERIALES -->
+    <section id="view-materials" class="hidden space-y-6 fade-in">
         <div class="flex justify-between items-end">
-            <h2 class="text-2xl font-bold text-slate-900">Catálogo</h2>
-            <button onclick="window.openMaterialModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Añadir</button>
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900">Catálogo</h2>
+                <p class="text-slate-500 text-sm mt-1">Tus materiales y servicios</p>
+            </div>
+            <button onclick="window.openMaterialModal()" class="bg-slate-900 hover:bg-slate-800 transition-colors text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-slate-200">
+                <i data-lucide="plus" class="w-5 h-5"></i> Añadir
+            </button>
         </div>
-        <div id="materials-list" class="grid gap-2"></div>
+        <div id="materials-list" class="grid sm:grid-cols-2 gap-4"></div>
     </section>
 
-    <!-- CLIENTES -->
-    <section id="view-clients" class="hidden space-y-4">
+    <!-- SECCIÓN: CLIENTES -->
+    <section id="view-clients" class="hidden space-y-6 fade-in">
         <div class="flex justify-between items-end">
-            <h2 class="text-2xl font-bold text-slate-900">Clientes</h2>
-            <button onclick="window.openClientModal()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Nuevo</button>
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900">Clientes</h2>
+                <p class="text-slate-500 text-sm mt-1">Cartera de contactos</p>
+            </div>
+            <button onclick="window.openClientModal()" class="bg-slate-900 hover:bg-slate-800 transition-colors text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-slate-200">
+                <i data-lucide="user-plus" class="w-5 h-5"></i> Nuevo
+            </button>
         </div>
-        <div id="clients-list" class="grid gap-2"></div>
+        <div id="clients-list" class="grid sm:grid-cols-2 gap-4"></div>
     </section>
 
 </main>
 
-<!-- NAV -->
-<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-16 z-50">
-    <button onclick="window.switchView('quotes')" id="nav-quotes" class="flex-1 active-tab">📋</button>
-    <button onclick="window.switchView('materials')" id="nav-materials" class="flex-1">📦</button>
-    <button onclick="window.switchView('clients')" id="nav-clients" class="flex-1">👥</button>
+<!-- NAVEGACIÓN INFERIOR -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-20 z-40 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <button onclick="window.switchView('quotes')" id="nav-quotes" class="flex-1 flex flex-col items-center justify-center h-full active-tab transition-all">
+        <i data-lucide="file-text" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Proyectos</span>
+    </button>
+    <button onclick="window.switchView('materials')" id="nav-materials" class="flex-1 flex flex-col items-center justify-center h-full text-slate-400 transition-all">
+        <i data-lucide="package" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Catálogo</span>
+    </button>
+    <button onclick="window.switchView('clients')" id="nav-clients" class="flex-1 flex flex-col items-center justify-center h-full text-slate-400 transition-all">
+        <i data-lucide="users" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Clientes</span>
+    </button>
 </nav>
 
-<!-- MODAL QUOTE (RESTO ORIGINAL SIMPLIFICADO NO AFECTA BUGS) -->
-<div id="modal-quote" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center"></div>
+<!-- ================= MODALES ================= -->
 
-<!-- MODAL FORM CLIENTES FIX -->
-<div id="modal-form" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4 z-[200]">
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
-        <div class="p-4 bg-slate-50 border-b font-bold text-center" id="form-title">Cliente</div>
-        <div class="p-6 space-y-4">
-            <input id="f-name" placeholder="Nombre" class="w-full p-3 bg-slate-100 rounded-xl">
-            <input id="f-phone" placeholder="Teléfono" class="w-full p-3 bg-slate-100 rounded-xl">
-            <input id="f-addr" placeholder="Dirección" class="w-full p-3 bg-slate-100 rounded-xl">
+<!-- MODAL: CLIENTE -->
+<div id="modal-form" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex-col items-center justify-center p-4 z-[100] transition-opacity">
+    <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden fade-in">
+        <div class="p-5 bg-slate-50 border-b flex justify-between items-center">
+            <h3 class="font-bold text-lg text-slate-800" id="form-title">Nuevo Cliente</h3>
+            <button onclick="window.closeModals()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
         </div>
-        <div class="p-4 bg-slate-50 flex gap-2">
-            <button onclick="window.closeModals()" class="flex-1">Cancelar</button>
-            <button onclick="window.saveClient()" class="flex-1 bg-blue-600 text-white rounded-xl">Guardar</button>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Nombre</label>
+                <input id="f-name" placeholder="Ej. Juan Pérez" class="w-full p-4 mt-1 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-2xl transition-all">
+            </div>
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Teléfono</label>
+                <input id="f-phone" type="tel" placeholder="Ej. +34 600 000 000" class="w-full p-4 mt-1 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-2xl transition-all">
+            </div>
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Dirección</label>
+                <input id="f-addr" placeholder="Ej. Calle Principal 123" class="w-full p-4 mt-1 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-2xl transition-all">
+            </div>
+        </div>
+        <div class="p-4 bg-slate-50 flex gap-3 border-t">
+            <button onclick="window.closeModals()" class="flex-1 py-3 font-bold text-slate-600 bg-slate-200 rounded-xl hover:bg-slate-300 transition-colors">Cancelar</button>
+            <button onclick="window.saveClient()" class="flex-1 py-3 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200 transition-all">Guardar</button>
         </div>
     </div>
 </div>
 
-<!-- MODAL MATERIAL FIX -->
-<div id="modal-material" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-4 z-[200]">
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
-        <div class="p-4 bg-slate-50 border-b font-bold text-center">Material</div>
-        <div class="p-6 space-y-4">
-            <input id="m-name" placeholder="Nombre" class="w-full p-3 bg-slate-100 rounded-xl">
-            <input id="m-price" type="number" placeholder="Precio" class="w-full p-3 bg-slate-100 rounded-xl">
+<!-- MODAL: MATERIAL -->
+<div id="modal-material" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex-col items-center justify-center p-4 z-[100] transition-opacity">
+    <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden fade-in">
+        <div class="p-5 bg-slate-50 border-b flex justify-between items-center">
+            <h3 class="font-bold text-lg text-slate-800">Nuevo Material</h3>
+            <button onclick="window.closeModals()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
         </div>
-        <div class="p-4 bg-slate-50 flex gap-2">
-            <button onclick="window.closeModals()" class="flex-1">Cancelar</button>
-            <button onclick="window.saveMaterial()" class="flex-1 bg-blue-600 text-white rounded-xl">Guardar</button>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Descripción / Nombre</label>
+                <input id="m-name" placeholder="Ej. Cable de Cobre 2.5mm" class="w-full p-4 mt-1 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-2xl transition-all">
+            </div>
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Precio Unitario (€)</label>
+                <input id="m-price" type="number" step="0.01" placeholder="0.00" class="w-full p-4 mt-1 bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-2xl transition-all">
+            </div>
+        </div>
+        <div class="p-4 bg-slate-50 flex gap-3 border-t">
+            <button onclick="window.closeModals()" class="flex-1 py-3 font-bold text-slate-600 bg-slate-200 rounded-xl hover:bg-slate-300 transition-colors">Cancelar</button>
+            <button onclick="window.saveMaterial()" class="flex-1 py-3 font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-lg shadow-slate-200 transition-all">Guardar</button>
         </div>
     </div>
 </div>
 
-<div id="pdf-render-zone"></div>
+<!-- MODAL: NUEVO PRESUPUESTO -->
+<div id="modal-quote" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex-col items-center justify-center p-4 z-[100] transition-opacity">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] fade-in">
+        <div class="p-5 bg-slate-50 border-b flex justify-between items-center">
+            <h3 class="font-bold text-lg text-slate-800">Crear Presupuesto</h3>
+            <button onclick="window.closeModals()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x"></i></button>
+        </div>
+        
+        <div class="p-6 overflow-y-auto space-y-5 flex-1 custom-scrollbar">
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Título del Proyecto</label>
+                <input id="q-title" placeholder="Ej. Instalación Eléctrica Cocina" class="w-full p-3 mt-1 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none">
+            </div>
+            
+            <div>
+                <label class="text-xs font-bold text-slate-500 uppercase ml-1">Cliente</label>
+                <select id="q-client" class="w-full p-3 mt-1 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none">
+                    <option value="">-- Selecciona un cliente --</option>
+                </select>
+            </div>
+
+            <div class="border border-slate-200 p-4 rounded-2xl bg-white space-y-3 shadow-sm">
+                <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                    <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-600"></i> Materiales y Conceptos
+                </h4>
+                <div class="flex gap-2">
+                    <select id="q-material" class="flex-1 p-2 border border-slate-200 rounded-lg text-sm bg-slate-50 outline-none"></select>
+                    <input id="q-qty" type="number" min="1" value="1" placeholder="Cant." class="w-20 p-2 border border-slate-200 rounded-lg text-sm bg-slate-50 outline-none text-center">
+                    <button onclick="window.addMaterialToQuote()" class="bg-blue-600 text-white px-3 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <!-- Lista de items añadidos -->
+                <ul id="q-items-list" class="space-y-2 mt-4 empty:hidden"></ul>
+                
+                <div class="pt-3 border-t border-slate-100 flex justify-between items-center mt-2">
+                    <span class="font-bold text-slate-500">Total Estimado</span>
+                    <span class="text-2xl font-extrabold text-blue-600" id="q-total">0.00 €</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-4 bg-slate-50 border-t flex gap-3">
+            <button onclick="window.closeModals()" class="flex-1 py-3 font-bold text-slate-600 bg-slate-200 rounded-xl hover:bg-slate-300 transition-colors">Cancelar</button>
+            <button onclick="window.saveQuote()" class="flex-1 py-3 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200 transition-all">Guardar Presupuesto</button>
+        </div>
+    </div>
+</div>
+
+<!-- Pequeña notificación visual (Toast) -->
+<div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-xl font-semibold text-sm transition-all duration-300 opacity-0 pointer-events-none z-[300]">
+    Acción completada
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-let db, auth;
-const appId = 'electri-pro-v2';
+// Inicializar iconos
+lucide.createIcons();
+
+let db, auth, currentUser;
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'electri-pro-v2';
 
 window.dbData = { clients: [], materials: [], quotes: [] };
 window.currentQuoteItems = [];
@@ -129,93 +244,322 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
         appId: "1:1050154424016:web:10e5250c9b78c17bb7b0d5"
     };
 
-// ---------------- UI ----------------
+// ================= UTILIDADES =================
+const showToast = (msg) => {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.remove('opacity-0', 'translate-y-[-20px]');
+    setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]'), 2500);
+};
+
+const formatMoney = (amount) => {
+    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
+};
+
+// ================= UI & NAVEGACIÓN =================
 window.switchView = (v) => {
     ['quotes','materials','clients'].forEach(s => {
-        document.getElementById('view-'+s)?.classList.add('hidden');
-        document.getElementById('nav-'+s)?.classList.remove('active-tab');
+        document.getElementById('view-'+s).classList.add('hidden');
+        document.getElementById('nav-'+s).classList.remove('active-tab', 'text-blue-600');
+        document.getElementById('nav-'+s).classList.add('text-slate-400');
     });
-    document.getElementById('view-'+v)?.classList.remove('hidden');
-    document.getElementById('nav-'+v)?.classList.add('active-tab');
+    document.getElementById('view-'+v).classList.remove('hidden');
+    document.getElementById('nav-'+v).classList.add('active-tab', 'text-blue-600');
+    document.getElementById('nav-'+v).classList.remove('text-slate-400');
 };
 
 window.closeModals = () => {
     document.getElementById('modal-form').classList.add('hidden');
     document.getElementById('modal-material').classList.add('hidden');
+    document.getElementById('modal-quote').classList.add('hidden');
+    document.getElementById('modal-form').classList.remove('flex');
+    document.getElementById('modal-material').classList.remove('flex');
+    document.getElementById('modal-quote').classList.remove('flex');
 };
 
-// FIX CRÍTICO: reset inputs
+// ================= RENDERIZADO EN TIEMPO REAL =================
+window.renderClients = () => {
+    const list = document.getElementById('clients-list');
+    if (window.dbData.clients.length === 0) {
+        list.innerHTML = `<div class="col-span-full text-center p-8 text-slate-400 border border-dashed rounded-3xl">No hay clientes aún. Añade el primero.</div>`;
+        return;
+    }
+    list.innerHTML = window.dbData.clients.map(c => `
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center group hover:shadow-md transition-shadow">
+            <div>
+                <div class="font-bold text-slate-800 text-lg">${c.name}</div>
+                <div class="text-sm text-slate-500 flex items-center gap-1 mt-1"><i data-lucide="phone" class="w-3 h-3"></i> ${c.phone || 'Sin teléfono'}</div>
+                <div class="text-sm text-slate-500 flex items-center gap-1 mt-1"><i data-lucide="map-pin" class="w-3 h-3"></i> ${c.address || 'Sin dirección'}</div>
+            </div>
+            <button onclick="window.deleteRecord('clients', '${c.id}')" class="p-3 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+        </div>
+    `).join('');
+    lucide.createIcons();
+};
+
+window.renderMaterials = () => {
+    const list = document.getElementById('materials-list');
+    if (window.dbData.materials.length === 0) {
+        list.innerHTML = `<div class="col-span-full text-center p-8 text-slate-400 border border-dashed rounded-3xl">Catálogo vacío. Añade materiales o servicios.</div>`;
+        return;
+    }
+    list.innerHTML = window.dbData.materials.map(m => `
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center hover:shadow-md transition-shadow">
+            <div>
+                <div class="font-bold text-slate-800">${m.name}</div>
+                <div class="text-blue-600 font-extrabold mt-1">${formatMoney(m.price)}</div>
+            </div>
+            <button onclick="window.deleteRecord('materials', '${c.id}')" class="p-3 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+        </div>
+    `).join('');
+    lucide.createIcons();
+};
+
+window.renderQuotes = () => {
+    const list = document.getElementById('quotes-list');
+    if (window.dbData.quotes.length === 0) {
+        list.innerHTML = `<div class="bg-white p-8 rounded-3xl text-center text-slate-400 border border-slate-200 border-dashed">No tienes proyectos. ¡Crea el primero!</div>`;
+        return;
+    }
+    
+    // Ordenar de más reciente a más antiguo si existe fecha
+    const sorted = window.dbData.quotes.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+    list.innerHTML = sorted.map(q => {
+        const clientName = window.dbData.clients.find(c => c.id === q.clientId)?.name || 'Cliente Desconocido';
+        const dateStr = q.createdAt ? new Date(q.createdAt.seconds * 1000).toLocaleDateString() : 'Reciente';
+        
+        return `
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-all relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+            <div class="flex justify-between items-start ml-2">
+                <div>
+                    <div class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">${dateStr}</div>
+                    <div class="font-bold text-slate-900 text-lg">${q.title}</div>
+                    <div class="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                        <i data-lucide="user" class="w-4 h-4"></i> ${clientName}
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="font-extrabold text-xl text-slate-800">${formatMoney(q.total)}</div>
+                    <button onclick="window.deleteRecord('quotes', '${q.id}')" class="text-xs text-red-500 mt-2 font-bold hover:underline">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    `}).join('');
+    lucide.createIcons();
+};
+
+// ================= LÓGICA DE GUARDADO Y ELIMINADO =================
+// Función genérica para eliminar
+window.deleteRecord = async (collectionName, docId) => {
+    if(!currentUser) return;
+    try {
+        const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
+        await deleteDoc(ref);
+        showToast("Elemento eliminado");
+    } catch(e) { console.error("Error deleting", e); }
+};
+
+// --- CLIENTES ---
 window.openClientModal = () => {
     window.editingId = null;
     document.getElementById('f-name').value = '';
     document.getElementById('f-phone').value = '';
     document.getElementById('f-addr').value = '';
     document.getElementById('modal-form').classList.remove('hidden');
+    document.getElementById('modal-form').classList.add('flex');
 };
 
 window.saveClient = async () => {
+    if(!currentUser) return;
+    const name = document.getElementById('f-name').value.trim();
+    if(!name) return showToast("El nombre es obligatorio");
+    
     const data = {
-        name: document.getElementById('f-name').value,
-        phone: document.getElementById('f-phone').value,
-        address: document.getElementById('f-addr').value
+        name,
+        phone: document.getElementById('f-phone').value.trim(),
+        address: document.getElementById('f-addr').value.trim(),
+        createdAt: serverTimestamp()
     };
-    const ref = collection(db,'artifacts',appId,'public','data','clients');
-    if(window.editingId) await setDoc(doc(ref,window.editingId),data,{merge:true});
-    else await addDoc(ref,data);
+    
+    // MANDATO DE SEGURIDAD 1: Ruta privada aisla la info por usuario
+    const ref = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'clients');
+    await addDoc(ref, data);
+    
     window.closeModals();
+    showToast("Cliente guardado");
 };
 
-// FIX CRÍTICO: reset inputs
+// --- MATERIALES ---
 window.openMaterialModal = () => {
     window.editingId = null;
     document.getElementById('m-name').value = '';
     document.getElementById('m-price').value = '';
     document.getElementById('modal-material').classList.remove('hidden');
+    document.getElementById('modal-material').classList.add('flex');
 };
 
 window.saveMaterial = async () => {
-    const data = {
-        name: document.getElementById('m-name').value,
-        price: parseFloat(document.getElementById('m-price').value||0)
-    };
-    const ref = collection(db,'artifacts',appId,'public','data','materials');
-    await addDoc(ref,data);
+    if(!currentUser) return;
+    const name = document.getElementById('m-name').value.trim();
+    const price = parseFloat(document.getElementById('m-price').value || 0);
+    if(!name) return showToast("El nombre es obligatorio");
+
+    const data = { name, price, createdAt: serverTimestamp() };
+    
+    const ref = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'materials');
+    await addDoc(ref, data);
+    
     window.closeModals();
+    showToast("Material añadido");
 };
 
-async function start(){
+// --- PRESUPUESTOS (NUEVO) ---
+window.openQuoteModal = () => {
+    window.currentQuoteItems = [];
+    document.getElementById('q-title').value = '';
+    
+    // Llenar selectores
+    const cSelect = document.getElementById('q-client');
+    cSelect.innerHTML = `<option value="">-- Selecciona un cliente --</option>` + 
+        window.dbData.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        
+    const mSelect = document.getElementById('q-material');
+    mSelect.innerHTML = window.dbData.materials.map(m => `<option value="${m.id}">${m.name} (${formatMoney(m.price)})</option>`).join('');
+    
+    window.renderQuoteItemsList();
+    
+    document.getElementById('modal-quote').classList.remove('hidden');
+    document.getElementById('modal-quote').classList.add('flex');
+};
+
+window.addMaterialToQuote = () => {
+    const matId = document.getElementById('q-material').value;
+    const qty = parseInt(document.getElementById('q-qty').value || 1);
+    
+    if(!matId) return showToast("Selecciona un material");
+    
+    const mat = window.dbData.materials.find(m => m.id === matId);
+    if(mat) {
+        window.currentQuoteItems.push({
+            id: mat.id,
+            name: mat.name,
+            price: mat.price,
+            qty: qty,
+            subtotal: mat.price * qty
+        });
+        showToast("Añadido al presupuesto");
+        window.renderQuoteItemsList();
+        document.getElementById('q-qty').value = 1; // Reset cantidad
+    }
+};
+
+window.removeMaterialFromQuote = (index) => {
+    window.currentQuoteItems.splice(index, 1);
+    window.renderQuoteItemsList();
+};
+
+window.renderQuoteItemsList = () => {
+    const list = document.getElementById('q-items-list');
+    let total = 0;
+    
+    list.innerHTML = window.currentQuoteItems.map((item, index) => {
+        total += item.subtotal;
+        return `
+        <li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <div class="flex-1">
+                <div class="font-bold text-sm">${item.name}</div>
+                <div class="text-xs text-slate-500">${item.qty} ud. x ${formatMoney(item.price)}</div>
+            </div>
+            <div class="font-bold mr-3">${formatMoney(item.subtotal)}</div>
+            <button onclick="window.removeMaterialFromQuote(${index})" class="text-red-400 p-1 bg-white rounded-lg border shadow-sm"><i data-lucide="minus" class="w-4 h-4"></i></button>
+        </li>
+    `}).join('');
+    
+    document.getElementById('q-total').innerText = formatMoney(total);
+    lucide.createIcons();
+};
+
+window.saveQuote = async () => {
+    if(!currentUser) return;
+    const title = document.getElementById('q-title').value.trim();
+    const clientId = document.getElementById('q-client').value;
+    
+    if(!title) return showToast("Añade un título al proyecto");
+    if(!clientId) return showToast("Selecciona un cliente");
+    if(window.currentQuoteItems.length === 0) return showToast("Añade al menos un material");
+
+    const total = window.currentQuoteItems.reduce((acc, item) => acc + item.subtotal, 0);
+
+    const data = {
+        title,
+        clientId,
+        items: window.currentQuoteItems,
+        total,
+        createdAt: serverTimestamp()
+    };
+    
+    const ref = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'quotes');
+    await addDoc(ref, data);
+    
+    window.closeModals();
+    showToast("Presupuesto guardado con éxito");
+};
+
+// ================= INICIALIZACIÓN Y AUTENTICACIÓN =================
+async function start() {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
 
-    try{
-        if(typeof __initial_auth_token !== 'undefined'){
-            await signInWithCustomToken(auth,__initial_auth_token);
+    // SISTEMA SEGURO DE AUTENTICACIÓN
+    try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
         } else {
             await signInAnonymously(auth);
         }
-    }catch(e){
+    } catch (e) {
+        console.error("Auth error:", e);
         await signInAnonymously(auth);
     }
 
-    onAuthStateChanged(auth,(user)=>{
-        if(!user) return;
+    // MANDATO DE SEGURIDAD 3: Esperar siempre la autenticación antes de consultar a Firebase
+    onAuthStateChanged(auth, (user) => {
+        if (!user) return;
+        currentUser = user; // Guardar el usuario activo
+        
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('user-status-text');
+        statusDot.classList.replace('bg-slate-300', 'bg-emerald-500');
+        statusDot.classList.remove('animate-pulse');
+        statusText.innerText = "Privado y Seguro";
+        statusText.classList.add('text-emerald-600');
 
-        onSnapshot(collection(db,'artifacts',appId,'public','data','clients'),s=>{
-            window.dbData.clients = s.docs.map(d=>({id:d.id,...d.data()}));
-        });
+        // Escuchar colecciones privadas (Sync Automático)
+        onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'clients'), (s) => {
+            window.dbData.clients = s.docs.map(d => ({id: d.id, ...d.data()}));
+            window.renderClients();
+        }, (error) => console.error(error));
 
-        onSnapshot(collection(db,'artifacts',appId,'public','data','materials'),s=>{
-            window.dbData.materials = s.docs.map(d=>({id:d.id,...d.data()}));
-        });
+        onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'materials'), (s) => {
+            window.dbData.materials = s.docs.map(d => ({id: d.id, ...d.data()}));
+            window.renderMaterials();
+        }, (error) => console.error(error));
 
-        onSnapshot(collection(db,'artifacts',appId,'public','data','quotes'),s=>{
-            window.dbData.quotes = s.docs.map(d=>({id:d.id,...d.data()}));
-        });
+        onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'quotes'), (s) => {
+            window.dbData.quotes = s.docs.map(d => ({id: d.id, ...d.data()}));
+            window.renderQuotes();
+        }, (error) => console.error(error));
     });
 }
 
-window.addEventListener('load',start);
+window.addEventListener('load', start);
 </script>
 
 </body>
