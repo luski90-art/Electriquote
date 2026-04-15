@@ -39,7 +39,7 @@
         <h1 class="text-xl font-extrabold tracking-tight text-slate-800">ELECTRI<span class="text-blue-600">QUOTE</span></h1>
     </div>
     <div id="connection-status" class="flex items-center gap-2">
-        <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter">Sincronizado</span>
+        <span id="sync-badge" class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full border border-slate-200 uppercase tracking-tighter">Conectando...</span>
     </div>
 </header>
 
@@ -184,7 +184,8 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+// FIX CRÍTICO APLICADO: Importamos signInWithCustomToken para sincronizar identidad
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'electri-pro-v3';
@@ -272,6 +273,7 @@ window.renderQuotes = () => {
 
 // --- DATA LOGIC ---
 window.saveClient = async () => {
+    if(!currentUser) return showToast("Error de sincronización", true);
     const name = document.getElementById('f-name').value.trim();
     if(!name) return showToast("Nombre requerido", true);
     const data = { name, phone: document.getElementById('f-phone').value, address: document.getElementById('f-addr').value };
@@ -305,6 +307,7 @@ window.openClientModal = () => {
 };
 
 window.saveMaterial = async () => {
+    if(!currentUser) return showToast("Error de sincronización", true);
     const name = document.getElementById('m-name').value.trim();
     const price = parseFloat(document.getElementById('m-price').value || 0);
     if(!name) return showToast("Nombre requerido", true);
@@ -345,7 +348,6 @@ window.openQuoteModal = () => {
     document.getElementById('btn-save-quote').innerText = "Crear Proyecto";
     document.getElementById('btn-pdf-quote').classList.add('hidden');
     
-    // Selects
     document.getElementById('q-client').innerHTML = `<option value="">Seleccionar cliente</option>` + window.dbData.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     document.getElementById('q-material').innerHTML = window.dbData.materials.map(m => `<option value="${m.id}">${m.name} (${m.price.toFixed(2)}€)</option>`).join('');
     
@@ -397,6 +399,7 @@ window.renderQuoteItemsList = () => {
 };
 
 window.saveQuote = async () => {
+    if(!currentUser) return showToast("Error de sincronización", true);
     const title = document.getElementById('q-title').value.trim();
     const clientId = document.getElementById('q-client').value;
     if(!title || !clientId || window.currentQuoteItems.length === 0) return showToast("Datos incompletos", true);
@@ -413,6 +416,7 @@ window.saveQuote = async () => {
 };
 
 window.deleteRecord = async (col, id) => {
+    if(!currentUser) return;
     try {
         await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, col, id));
         showToast("Eliminado con éxito");
@@ -426,7 +430,6 @@ window.downloadPDF = () => {
     const quote = window.dbData.quotes.find(q => q.id === window.editingId);
     const client = window.dbData.clients.find(c => c.id === quote.clientId);
     
-    // Estética Header
     doc.setFillColor(37, 99, 235);
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
@@ -435,7 +438,6 @@ window.downloadPDF = () => {
     doc.setFontSize(10);
     doc.text(new Date().toLocaleDateString(), 170, 25);
     
-    // Info Cliente
     doc.setTextColor(50, 50, 50);
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
@@ -445,13 +447,11 @@ window.downloadPDF = () => {
     doc.text(client?.phone || "-", 20, 68);
     doc.text(client?.address || "-", 20, 74);
     
-    // Proyecto
     doc.setFont(undefined, 'bold');
     doc.text("PROYECTO:", 120, 55);
     doc.setFont(undefined, 'normal');
     doc.text(quote.title, 120, 62);
 
-    // Tabla de Items
     const body = quote.items.map(i => [i.name, i.qty, i.price.toFixed(2) + " €", i.subtotal.toFixed(2) + " €"]);
     doc.autoTable({
         startY: 85,
@@ -471,20 +471,45 @@ window.downloadPDF = () => {
     doc.save(`Presupuesto_${quote.title.replace(/\s+/g, '_')}.pdf`);
 };
 
-// --- INIT ---
+// --- INIT (Motor de Autenticación Unificado Corregido) ---
 async function init() {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
     
+    const badge = document.getElementById('sync-badge');
+
+    // 1. FORZAMOS LA IDENTIDAD ÚNICA ANTES DE CARGAR NADA
+    try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            // Este token garantiza que seas TÚ tanto en PC como en Móvil
+            await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+            // Si accedes fuera de tu cuenta, usa un perfil anónimo local
+            await signInAnonymously(auth);
+        }
+    } catch (e) {
+        console.error("Auth init error:", e);
+        await signInAnonymously(auth);
+    }
+    
+    // 2. ESCUCHAMOS LA SESIÓN Y CARGAMOS DATOS
     onAuthStateChanged(auth, (user) => {
-        if(!user) { signInAnonymously(auth); return; }
+        if(!user) return;
         currentUser = user;
         
-        // Listeners
+        // Actualizar UI para mostrar que estamos sincronizados
+        badge.innerText = "Sincronizado";
+        badge.classList.replace('text-slate-500', 'text-emerald-600');
+        badge.classList.replace('bg-slate-100', 'bg-emerald-50');
+        badge.classList.replace('border-slate-200', 'border-emerald-100');
+        
+        // Listeners en tiempo real aislados a tu UID unificado
         const listen = (c, fn) => onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, c), s => {
             window.dbData[c] = s.docs.map(d => ({id: d.id, ...d.data()}));
             fn();
+        }, (error) => {
+            console.error(`Error sincronizando ${c}:`, error);
         });
         
         listen('clients', window.renderClients);
