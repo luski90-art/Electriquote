@@ -245,11 +245,18 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
     };
 
 // ================= UTILIDADES =================
-const showToast = (msg) => {
+const showToast = (msg, isError = false) => {
     const t = document.getElementById('toast');
     t.innerText = msg;
+    if(isError) {
+        t.classList.remove('bg-slate-800');
+        t.classList.add('bg-red-600');
+    } else {
+        t.classList.remove('bg-red-600');
+        t.classList.add('bg-slate-800');
+    }
     t.classList.remove('opacity-0', 'translate-y-[-20px]');
-    setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]'), 2500);
+    setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]'), 3000);
 };
 
 const formatMoney = (amount) => {
@@ -305,13 +312,14 @@ window.renderMaterials = () => {
         list.innerHTML = `<div class="col-span-full text-center p-8 text-slate-400 border border-dashed rounded-3xl">Catálogo vacío. Añade materiales o servicios.</div>`;
         return;
     }
+    // FIX APLICADO AQUÍ: m.id en lugar de c.id
     list.innerHTML = window.dbData.materials.map(m => `
         <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex justify-between items-center hover:shadow-md transition-shadow">
             <div>
                 <div class="font-bold text-slate-800">${m.name}</div>
                 <div class="text-blue-600 font-extrabold mt-1">${formatMoney(m.price)}</div>
             </div>
-            <button onclick="window.deleteRecord('materials', '${c.id}')" class="p-3 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors">
+            <button onclick="window.deleteRecord('materials', '${m.id}')" class="p-3 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors">
                 <i data-lucide="trash-2" class="w-5 h-5"></i>
             </button>
         </div>
@@ -357,12 +365,15 @@ window.renderQuotes = () => {
 // ================= LÓGICA DE GUARDADO Y ELIMINADO =================
 // Función genérica para eliminar
 window.deleteRecord = async (collectionName, docId) => {
-    if(!currentUser) return;
+    if(!currentUser) return showToast("Error: Sin sesión", true);
     try {
         const ref = doc(db, 'artifacts', appId, 'users', currentUser.uid, collectionName, docId);
         await deleteDoc(ref);
         showToast("Elemento eliminado");
-    } catch(e) { console.error("Error deleting", e); }
+    } catch(e) { 
+        console.error("Error deleting", e); 
+        showToast("Error al eliminar", true);
+    }
 };
 
 // --- CLIENTES ---
@@ -376,9 +387,9 @@ window.openClientModal = () => {
 };
 
 window.saveClient = async () => {
-    if(!currentUser) return;
+    if(!currentUser) return showToast("Error: Sin sesión", true);
     const name = document.getElementById('f-name').value.trim();
-    if(!name) return showToast("El nombre es obligatorio");
+    if(!name) return showToast("El nombre es obligatorio", true);
     
     const data = {
         name,
@@ -387,12 +398,15 @@ window.saveClient = async () => {
         createdAt: serverTimestamp()
     };
     
-    // MANDATO DE SEGURIDAD 1: Ruta privada aisla la info por usuario
-    const ref = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'clients');
-    await addDoc(ref, data);
-    
-    window.closeModals();
-    showToast("Cliente guardado");
+    try {
+        const ref = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'clients');
+        await addDoc(ref, data);
+        window.closeModals();
+        showToast("Cliente guardado");
+    } catch (e) {
+        console.error(e);
+        showToast("Error al guardar cliente", true);
+    }
 };
 
 // --- MATERIALES ---
@@ -405,18 +419,22 @@ window.openMaterialModal = () => {
 };
 
 window.saveMaterial = async () => {
-    if(!currentUser) return;
+    if(!currentUser) return showToast("Error: Sin sesión", true);
     const name = document.getElementById('m-name').value.trim();
     const price = parseFloat(document.getElementById('m-price').value || 0);
-    if(!name) return showToast("El nombre es obligatorio");
+    if(!name) return showToast("El nombre es obligatorio", true);
 
     const data = { name, price, createdAt: serverTimestamp() };
     
-    const ref = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'materials');
-    await addDoc(ref, data);
-    
-    window.closeModals();
-    showToast("Material añadido");
+    try {
+        const ref = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'materials');
+        await addDoc(ref, data);
+        window.closeModals();
+        showToast("Material añadido");
+    } catch (e) {
+        console.error(e);
+        showToast("Error al guardar material", true);
+    }
 };
 
 // --- PRESUPUESTOS (NUEVO) ---
@@ -442,7 +460,7 @@ window.addMaterialToQuote = () => {
     const matId = document.getElementById('q-material').value;
     const qty = parseInt(document.getElementById('q-qty').value || 1);
     
-    if(!matId) return showToast("Selecciona un material");
+    if(!matId) return showToast("Selecciona un material", true);
     
     const mat = window.dbData.materials.find(m => m.id === matId);
     if(mat) {
@@ -486,13 +504,13 @@ window.renderQuoteItemsList = () => {
 };
 
 window.saveQuote = async () => {
-    if(!currentUser) return;
+    if(!currentUser) return showToast("Error: Sin sesión", true);
     const title = document.getElementById('q-title').value.trim();
     const clientId = document.getElementById('q-client').value;
     
-    if(!title) return showToast("Añade un título al proyecto");
-    if(!clientId) return showToast("Selecciona un cliente");
-    if(window.currentQuoteItems.length === 0) return showToast("Añade al menos un material");
+    if(!title) return showToast("Añade un título al proyecto", true);
+    if(!clientId) return showToast("Selecciona un cliente", true);
+    if(window.currentQuoteItems.length === 0) return showToast("Añade al menos un material", true);
 
     const total = window.currentQuoteItems.reduce((acc, item) => acc + item.subtotal, 0);
 
@@ -504,11 +522,15 @@ window.saveQuote = async () => {
         createdAt: serverTimestamp()
     };
     
-    const ref = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'quotes');
-    await addDoc(ref, data);
-    
-    window.closeModals();
-    showToast("Presupuesto guardado con éxito");
+    try {
+        const ref = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'quotes');
+        await addDoc(ref, data);
+        window.closeModals();
+        showToast("Presupuesto guardado con éxito");
+    } catch (e) {
+        console.error(e);
+        showToast("Error al guardar presupuesto", true);
+    }
 };
 
 // ================= INICIALIZACIÓN Y AUTENTICACIÓN =================
@@ -517,7 +539,6 @@ async function start() {
     db = getFirestore(app);
     auth = getAuth(app);
 
-    // SISTEMA SEGURO DE AUTENTICACIÓN
     try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
             await signInWithCustomToken(auth, __initial_auth_token);
@@ -529,10 +550,9 @@ async function start() {
         await signInAnonymously(auth);
     }
 
-    // MANDATO DE SEGURIDAD 3: Esperar siempre la autenticación antes de consultar a Firebase
     onAuthStateChanged(auth, (user) => {
         if (!user) return;
-        currentUser = user; // Guardar el usuario activo
+        currentUser = user; 
         
         const statusDot = document.getElementById('status-dot');
         const statusText = document.getElementById('user-status-text');
@@ -541,7 +561,6 @@ async function start() {
         statusText.innerText = "Privado y Seguro";
         statusText.classList.add('text-emerald-600');
 
-        // Escuchar colecciones privadas (Sync Automático)
         onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'clients'), (s) => {
             window.dbData.clients = s.docs.map(d => ({id: d.id, ...d.data()}));
             window.renderClients();
