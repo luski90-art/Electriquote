@@ -32,8 +32,8 @@
         <p class="text-slate-500 text-sm mt-2 mb-8">Accede para sincronizar en la nube</p>
         
         <div class="space-y-3">
-            <input id="email-input" type="email" placeholder="Tu Email" class="w-full p-4 border border-slate-200 rounded-xl outline-none focus:ring-2 ring-slate-900 transition-all">
-            <input id="pass-input" type="password" placeholder="Tu Contraseña" class="w-full p-4 border border-slate-200 rounded-xl outline-none focus:ring-2 ring-slate-900 transition-all">
+            <input id="email-input" type="email" autocomplete="off" placeholder="Tu Email" class="w-full p-4 border border-slate-200 rounded-xl outline-none focus:ring-2 ring-slate-900 transition-all">
+            <input id="pass-input" type="password" autocomplete="off" placeholder="Tu Contraseña" class="w-full p-4 border border-slate-200 rounded-xl outline-none focus:ring-2 ring-slate-900 transition-all">
         </div>
         
         <p id="auth-error-msg" class="text-red-500 text-xs mt-4 font-bold hidden"></p>
@@ -389,9 +389,11 @@ const renderQts = () => {
 window.genPDF = (id) => {
     const q = window.data.quotes.find(x => x.id === id);
     const client = window.data.clients.find(x => x.id === q.clientId);
+    const dateFormatted = q.date ? new Date(q.date.seconds * 1000).toLocaleDateString() : new Date().toLocaleDateString();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
+    // Encabezado
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, 210, 35, 'F');
     doc.setFont("helvetica", "bold");
@@ -399,27 +401,35 @@ window.genPDF = (id) => {
     doc.setTextColor(255);
     doc.text("PRESUPUESTO", 20, 22);
     
+    // Información
     doc.setFontSize(10);
     doc.text("EMISOR:", 20, 45);
     doc.text("CLIENTE:", 120, 45);
     
+    // Datos Emisor (Actualizado: Sin correo, Con Fecha)
     doc.setTextColor(50);
-    doc.text("ELECTRIQUOTE PRO SERVICES", 20, 52);
-    doc.text(user.email, 20, 57);
+    doc.text("ELECTRIQUOTE PRO", 20, 52);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Fecha: ${dateFormatted}`, 20, 57);
     
+    // Datos Cliente
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(0);
     doc.text(client?.name.toUpperCase() || 'N/A', 120, 52);
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(100);
     doc.text(client?.phone || '-', 120, 57);
     doc.text(client?.address || '-', 120, 62);
 
+    // Tabla de items
     doc.autoTable({
         startY: 75,
         head: [['DESCRIPCIÓN', 'CANT.', 'PRECIO', 'TOTAL']],
         body: q.items.map(i => [i.name.toUpperCase(), i.qty, i.price.toFixed(2)+'€', i.sub.toFixed(2)+'€']),
         foot: [['', '', 'TOTAL BASE:', q.total.toFixed(2)+'€']],
         theme: 'striped',
-        headStyles: { fillColor: [15, 23, 42] }
+        headStyles: { fillColor: [15, 23, 42] },
+        footStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' } // Sin fondo azul en total
     });
 
     document.getElementById('pdf-frame').src = URL.createObjectURL(doc.output('blob'));
