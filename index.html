@@ -42,8 +42,8 @@
             <button id="btn-action-login" onclick="window.processAuth('login')" class="w-full py-4 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 flex items-center justify-center gap-2">
                 <span>Iniciar Sesión</span>
             </button>
-            <button id="btn-action-signup" onclick="window.processAuth('signup')" class="w-full py-4 border-2 border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50">
-                Crear una Cuenta
+            <button id="btn-action-signup" onclick="window.processAuth('signup')" class="w-full py-4 border-2 border-slate-900 text-slate-900 font-bold rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2">
+                <span>Crear una Cuenta</span>
             </button>
         </div>
     </div>
@@ -166,7 +166,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const firebaseConfig = JSON.parse(__firebase_config);
@@ -175,15 +175,16 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Forzamos persistencia de sesión para evitar errores de permisos en iframes
-setPersistence(auth, browserSessionPersistence);
+// Usar Local Persistence para que la sesión se mantenga sincronizada web/app siempre
+setPersistence(auth, browserLocalPersistence).catch(console.error);
 
 let user = null;
 window.data = { clients: [], materials: [], quotes: [] };
 window.tempItems = [];
 window.editingId = null;
+window.dbListeners = []; // Arrays para limpiar listeners al cerrar sesión
 
-// --- AUTH DEFINITIVO ---
+// --- AUTH DEFINITIVO SOLUCIONADO ---
 window.processAuth = async (mode) => {
     const email = document.getElementById('email-input').value.trim();
     const pass = document.getElementById('pass-input').value.trim();
@@ -198,35 +199,42 @@ window.processAuth = async (mode) => {
     errEl.classList.add('hidden');
     const btn = document.getElementById(`btn-action-${mode}`);
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<div class="loading-spinner"></div>`;
+    // Mostrar spinner centrando el contenido
+    btn.innerHTML = `<div class="loading-spinner" style="margin: 0 auto;"></div>`;
     btn.disabled = true;
 
-    // Timeout de seguridad para evitar bloqueos del hilo principal
-    setTimeout(async () => {
-        try {
-            if (mode === 'login') {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } else {
-                await createUserWithEmailAndPassword(auth, email, pass);
-            }
-        } catch (e) {
-            console.error(e);
-            let msg = "Error: " + (e.message || "Conexión fallida");
-            if(e.code === 'auth/wrong-password') msg = "Contraseña incorrecta";
-            if(e.code === 'auth/user-not-found') msg = "Usuario no registrado";
-            if(e.code === 'auth/email-already-in-use') msg = "El email ya está registrado";
-            if(e.code === 'auth/invalid-email') msg = "Email no válido";
-            if(e.code === 'auth/weak-password') msg = "Contraseña muy débil (mín. 6 car.)";
-            errEl.innerText = msg;
-            errEl.classList.remove('hidden');
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+    try {
+        // Ejecución asíncrona real (sin timeouts que escondan errores)
+        if (mode === 'login') {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } else {
+            await createUserWithEmailAndPassword(auth, email, pass);
         }
-    }, 100);
+        // Si todo va bien, el listener de onAuthStateChanged se encargará del resto
+    } catch (e) {
+        console.error("Auth Error:", e);
+        let msg = "Error: " + (e.message || "Conexión fallida");
+        if(e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password') msg = "Credenciales incorrectas";
+        if(e.code === 'auth/user-not-found') msg = "Usuario no registrado";
+        if(e.code === 'auth/email-already-in-use') msg = "El email ya está registrado";
+        if(e.code === 'auth/invalid-email') msg = "Email no válido";
+        if(e.code === 'auth/weak-password') msg = "Contraseña muy débil (mín. 6 car.)";
+        errEl.innerText = msg;
+        errEl.classList.remove('hidden');
+    } finally {
+        // Restaurar estado del botón si hay fallo
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 };
 
-window.doLogout = () => { signOut(auth); };
+window.doLogout = async () => { 
+    try {
+        await signOut(auth);
+    } catch (e) {
+        console.error("Error al cerrar sesión", e);
+    }
+};
 
 // --- GESTIÓN DE VISTAS Y MODALES ---
 window.switchView = (v) => {
@@ -243,14 +251,15 @@ window.closeAllModals = () => {
     window.editingId = null;
 };
 
-// --- SYNC REALTIME ---
+// --- SYNC REALTIME SOLUCIONADO ---
 const syncCol = (name, cb) => {
-    if(!user) return;
+    if(!user) return () => {}; // Seguridad adicional
     const path = collection(db, 'artifacts', appId, 'users', user.uid, name);
+    // onSnapshot devuelve una función para desuscribirse
     return onSnapshot(path, s => {
         window.data[name] = s.docs.map(d => ({id: d.id, ...d.data()}));
         cb();
-    }, (err) => console.error("Snapshot error:", err));
+    }, (err) => console.error(`Error en Snapshot ${name}:`, err));
 };
 
 // --- CRUD CLIENTES ---
@@ -412,17 +421,31 @@ window.genPDF = (id) => {
 // --- CICLO DE VIDA ---
 onAuthStateChanged(auth, u => {
     user = u;
+    
+    // 1. Limpiar SIEMPRE los listeners antiguos para evitar cruces de datos al cambiar de cuenta
+    window.dbListeners.forEach(unsub => unsub());
+    window.dbListeners = [];
+
     if(u) {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-emerald-500";
-        syncCol('clients', renderCls);
-        syncCol('materials', renderMats);
-        syncCol('quotes', renderQts);
+        
+        // 2. Guardar los nuevos listeners para poder limpiarlos al salir
+        window.dbListeners.push(syncCol('clients', renderCls));
+        window.dbListeners.push(syncCol('materials', renderMats));
+        window.dbListeners.push(syncCol('quotes', renderQts));
     } else {
         document.getElementById('auth-screen').classList.replace('hidden', 'flex');
         document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-slate-300";
+        
+        // 3. Limpiar memoria local de datos de sesión al cerrar
         window.data = { clients: [], materials: [], quotes: [] };
         renderCls(); renderMats(); renderQts();
+        
+        // 4. Limpiar los inputs del login por seguridad
+        document.getElementById('email-input').value = '';
+        document.getElementById('pass-input').value = '';
+        document.getElementById('auth-error-msg').classList.add('hidden');
     }
 });
 
