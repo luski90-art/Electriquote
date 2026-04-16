@@ -169,26 +169,41 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebas
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-const firebaseConfig = JSON.parse(__firebase_config);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'electri-pro-v4';
+// ==============================================================================
+// 🟢 CONFIGURACIÓN FIREBASE ACTUALIZADA CON TUS DATOS
+// ==============================================================================
+const firebaseConfig = {
+    apiKey: "AIzaSyBuX9O3WBR5zX_L-WYdRiwirBl50aUFzlg",
+    authDomain: "electriquote-b92c3.firebaseapp.com",
+    projectId: "electriquote-b92c3",
+    storageBucket: "electriquote-b92c3.firebasestorage.app",
+    messagingSenderId: "1050154424016",
+    appId: "1:1050154424016:web:10e5250c9b78c17bb7b0d5"
+};
+// ==============================================================================
+
+const appId = 'electri-pro-final';
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Usar Local Persistence para que la sesión se mantenga sincronizada web/app siempre
+// Persistencia local para mantener la sesión iniciada al cerrar la pestaña
 setPersistence(auth, browserLocalPersistence).catch(console.error);
 
 let user = null;
 window.data = { clients: [], materials: [], quotes: [] };
 window.tempItems = [];
 window.editingId = null;
-window.dbListeners = []; // Arrays para limpiar listeners al cerrar sesión
+window.dbListeners = [];
 
-// --- AUTH DEFINITIVO SOLUCIONADO ---
+// --- SISTEMA DE AUTENTICACIÓN ---
 window.processAuth = async (mode) => {
+    const errEl = document.getElementById('auth-error-msg');
+    const btn = document.getElementById(`btn-action-${mode}`);
+    const originalText = btn.innerHTML;
+
     const email = document.getElementById('email-input').value.trim();
     const pass = document.getElementById('pass-input').value.trim();
-    const errEl = document.getElementById('auth-error-msg');
     
     if (!email || !pass) {
         errEl.innerText = "Introduce email y contraseña";
@@ -197,46 +212,35 @@ window.processAuth = async (mode) => {
     }
 
     errEl.classList.add('hidden');
-    const btn = document.getElementById(`btn-action-${mode}`);
-    const originalText = btn.innerHTML;
-    // Mostrar spinner centrando el contenido
     btn.innerHTML = `<div class="loading-spinner" style="margin: 0 auto;"></div>`;
     btn.disabled = true;
 
     try {
-        // Ejecución asíncrona real (sin timeouts que escondan errores)
         if (mode === 'login') {
             await signInWithEmailAndPassword(auth, email, pass);
         } else {
             await createUserWithEmailAndPassword(auth, email, pass);
         }
-        // Si todo va bien, el listener de onAuthStateChanged se encargará del resto
     } catch (e) {
         console.error("Auth Error:", e);
-        let msg = "Error: " + (e.message || "Conexión fallida");
+        let msg = "Error de conexión";
         if(e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password') msg = "Credenciales incorrectas";
         if(e.code === 'auth/user-not-found') msg = "Usuario no registrado";
-        if(e.code === 'auth/email-already-in-use') msg = "El email ya está registrado";
-        if(e.code === 'auth/invalid-email') msg = "Email no válido";
-        if(e.code === 'auth/weak-password') msg = "Contraseña muy débil (mín. 6 car.)";
+        if(e.code === 'auth/email-already-in-use') msg = "El email ya está en uso";
+        if(e.code === 'auth/weak-password') msg = "Contraseña débil (mín. 6 car.)";
         errEl.innerText = msg;
         errEl.classList.remove('hidden');
     } finally {
-        // Restaurar estado del botón si hay fallo
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
 };
 
 window.doLogout = async () => { 
-    try {
-        await signOut(auth);
-    } catch (e) {
-        console.error("Error al cerrar sesión", e);
-    }
+    try { await signOut(auth); } catch (e) { console.error(e); }
 };
 
-// --- GESTIÓN DE VISTAS Y MODALES ---
+// --- NAVEGACIÓN ---
 window.switchView = (v) => {
     ['quotes','materials','clients'].forEach(x => {
         document.getElementById('view-'+x).classList.add('hidden');
@@ -247,22 +251,24 @@ window.switchView = (v) => {
 };
 
 window.closeAllModals = () => {
-    document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.replace('flex','hidden'));
+    document.querySelectorAll('[id^="modal-"]').forEach(m => {
+        m.classList.remove('flex');
+        m.classList.add('hidden');
+    });
     window.editingId = null;
 };
 
-// --- SYNC REALTIME SOLUCIONADO ---
+// --- SINCRONIZACIÓN FIREBASE (REALTIME) ---
 const syncCol = (name, cb) => {
-    if(!user) return () => {}; // Seguridad adicional
+    if(!user) return () => {}; 
     const path = collection(db, 'artifacts', appId, 'users', user.uid, name);
-    // onSnapshot devuelve una función para desuscribirse
     return onSnapshot(path, s => {
         window.data[name] = s.docs.map(d => ({id: d.id, ...d.data()}));
         cb();
-    }, (err) => console.error(`Error en Snapshot ${name}:`, err));
+    }, (err) => console.error(`Error Sync ${name}:`, err));
 };
 
-// --- CRUD CLIENTES ---
+// --- CLIENTES ---
 window.openClientModal = (id = null) => {
     window.editingId = id;
     const item = id ? window.data.clients.find(x => x.id === id) : null;
@@ -282,7 +288,7 @@ window.saveClientData = async () => {
     window.closeAllModals();
 };
 
-// --- CRUD MATERIALES ---
+// --- MATERIALES ---
 window.openMaterialModal = (id = null) => {
     window.editingId = id;
     const item = id ? window.data.materials.find(x => x.id === id) : null;
@@ -303,7 +309,10 @@ window.saveMaterialData = async () => {
 
 // --- PRESUPUESTOS ---
 window.openQuoteModal = () => {
-    if(window.data.clients.length === 0) return;
+    if(window.data.clients.length === 0) {
+        alert("Primero crea al menos un cliente.");
+        return;
+    }
     document.getElementById('q-cl-select').innerHTML = window.data.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     document.getElementById('q-mt-select').innerHTML = window.data.materials.map(m => `<option value="${m.id}">${m.name} (${m.price.toFixed(2)}€)</option>`).join('');
     window.tempItems = [];
@@ -342,7 +351,7 @@ window.saveFinalQuote = async () => {
 
 window.delItem = async (col, id, e) => {
     e.stopPropagation();
-    if(confirm("¿Eliminar definitivamente?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
+    if(confirm("¿Eliminar?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
 };
 
 // --- RENDERERS ---
@@ -418,34 +427,23 @@ window.genPDF = (id) => {
     document.getElementById('modal-pdf').classList.replace('hidden', 'flex');
 };
 
-// --- CICLO DE VIDA ---
+// --- MONITORIZAR ESTADO DE USUARIO ---
 onAuthStateChanged(auth, u => {
     user = u;
-    
-    // 1. Limpiar SIEMPRE los listeners antiguos para evitar cruces de datos al cambiar de cuenta
     window.dbListeners.forEach(unsub => unsub());
     window.dbListeners = [];
 
     if(u) {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-emerald-500";
-        
-        // 2. Guardar los nuevos listeners para poder limpiarlos al salir
         window.dbListeners.push(syncCol('clients', renderCls));
         window.dbListeners.push(syncCol('materials', renderMats));
         window.dbListeners.push(syncCol('quotes', renderQts));
     } else {
         document.getElementById('auth-screen').classList.replace('hidden', 'flex');
         document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-slate-300";
-        
-        // 3. Limpiar memoria local de datos de sesión al cerrar
         window.data = { clients: [], materials: [], quotes: [] };
         renderCls(); renderMats(); renderQts();
-        
-        // 4. Limpiar los inputs del login por seguridad
-        document.getElementById('email-input').value = '';
-        document.getElementById('pass-input').value = '';
-        document.getElementById('auth-error-msg').classList.add('hidden');
     }
 });
 
