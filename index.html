@@ -347,7 +347,11 @@ window.processAuth = async () => {
     }
 };
 
-window.doLogout = async () => { await signOut(auth); };
+window.doLogout = async () => { 
+    await signOut(auth); 
+    document.getElementById('usr-fld').value = '';
+    document.getElementById('key-fld').value = '';
+};
 
 // --- NAVEGACIÓN ---
 window.switchView = (v) => {
@@ -661,8 +665,8 @@ window.genPDF = (id) => {
     
     // FECHA A LA IZQUIERDA
     doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
     doc.text(`Ref: ${q.ref.toUpperCase()}`, 20, 45);
-    doc.setFont("helvetica", "normal");
     doc.text(`Fecha: ${dateFormatted}`, 20, 50);
     
     // DATOS CLIENTE A LA DERECHA (INCLUYE MUNICIPIO)
@@ -739,6 +743,8 @@ onAuthStateChanged(auth, u => {
     } else {
         document.getElementById('auth-screen').classList.replace('hidden', 'flex');
         document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-slate-300";
+        document.getElementById('usr-fld').value = '';
+        document.getElementById('key-fld').value = '';
         window.data = { clients: [], materials: [], quotes: [], templates: [] };
         renderCls(); renderMats(); renderQts();
     }
