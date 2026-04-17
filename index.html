@@ -168,14 +168,14 @@
 <div id="modal-material" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]">
     <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4">
         <h3 class="font-black text-xl" id="mat-title-modal">Material</h3>
-        <input id="mt-name" placeholder="Nombre Material" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
+        <input id="mt-name" placeholder="Nombre Material / Partida" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
         <div class="grid grid-cols-2 gap-2">
             <div>
                 <label class="text-[10px] font-bold text-slate-400 block mb-1">PRECIO VENTA</label>
                 <input id="mt-price" type="number" step="0.01" placeholder="P.V.P €" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
             </div>
             <div>
-                <label class="text-[10px] font-bold text-slate-400 block mb-1">COSTO (€)</label>
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">COSTO MAT. (€)</label>
                 <input id="mt-cost" type="number" step="0.01" placeholder="Costo €" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
             </div>
         </div>
@@ -676,7 +676,6 @@ window.genPDF = (id) => {
     doc.text(q.ref.toUpperCase(), 20, 52);
     doc.setFont("helvetica", "normal");
     doc.text(`Fecha: ${dateFormatted}`, 20, 57);
-    doc.text(`IVA Aplicado: ${q.iva || 21}%`, 20, 62);
     
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0);
@@ -688,17 +687,28 @@ window.genPDF = (id) => {
     doc.text(client?.address || '-', 120, 67);
 
     const subtotal = q.subtotal || q.items.reduce((a,b)=>a+b.sub,0);
-    const ivaVal = subtotal * ((q.iva || 21) / 100);
+    const ivaPercentage = parseInt(q.iva || 21);
+    const ivaVal = subtotal * (ivaPercentage / 100);
+
+    // Preparar las filas del pie de tabla dinámicamente según si hay IVA o no
+    let footData = [];
+    if (ivaPercentage === 0) {
+        footData = [
+            ['', '', 'TOTAL:', subtotal.toFixed(2)+'€']
+        ];
+    } else {
+        footData = [
+            ['', '', 'SUBTOTAL:', subtotal.toFixed(2)+'€'],
+            ['', '', `IVA (${ivaPercentage}%):`, ivaVal.toFixed(2)+'€'],
+            ['', '', 'TOTAL:', (subtotal + ivaVal).toFixed(2)+'€']
+        ];
+    }
 
     doc.autoTable({
         startY: 75,
         head: [['DESCRIPCIÓN', 'CANT.', 'PRECIO', 'TOTAL']],
         body: q.items.map(i => [i.name.toUpperCase(), i.qty, i.price.toFixed(2)+'€', i.sub.toFixed(2)+'€']),
-        foot: [
-            ['', '', 'SUBTOTAL:', subtotal.toFixed(2)+'€'],
-            ['', '', `IVA (${q.iva || 21}%):`, ivaVal.toFixed(2)+'€'],
-            ['', '', 'TOTAL:', (subtotal + ivaVal).toFixed(2)+'€']
-        ],
+        foot: footData,
         theme: 'striped',
         headStyles: { fillColor: [15, 23, 42] },
         footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' }
