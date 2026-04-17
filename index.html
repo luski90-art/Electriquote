@@ -133,7 +133,7 @@
 <div id="modal-quote" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]">
     <div class="bg-white w-full max-w-xl rounded-[2rem] overflow-hidden flex flex-col max-h-[85vh]">
         <div class="p-6 border-b bg-slate-50 flex justify-between items-center">
-            <h3 class="font-black text-xl">Nuevo Presupuesto</h3>
+            <h3 id="quote-title-modal" class="font-black text-xl">Nuevo Presupuesto</h3>
             <button onclick="window.closeAllModals()"><i data-lucide="x"></i></button>
         </div>
         <div class="p-6 overflow-y-auto space-y-4 flex-1">
@@ -162,8 +162,23 @@
             <span class="font-bold">Vista Previa PDF</span>
             <button onclick="window.closeAllModals()"><i data-lucide="x"></i></button>
         </div>
-        <iframe id="pdf-frame" class="flex-1 border-none"></iframe>
-        <div class="p-4 flex gap-2">
+        
+        <!-- Iframe para PC -->
+        <iframe id="pdf-frame" class="flex-1 border-none w-full h-full"></iframe>
+        
+        <!-- Fallback para Móviles -->
+        <div id="pdf-mobile-fallback" class="hidden flex-1 flex-col items-center justify-center p-6 text-center bg-slate-50">
+            <div class="bg-slate-200 p-5 rounded-full mb-4">
+                <i data-lucide="smartphone" class="w-12 h-12 text-slate-500"></i>
+            </div>
+            <h4 class="font-bold text-xl mb-2 text-slate-900">Vista móvil</h4>
+            <p class="text-slate-500 mb-6 text-sm max-w-xs mx-auto">Los navegadores móviles no muestran la vista previa directamente. Puedes abrir el PDF o descargarlo.</p>
+            <button id="btn-open-pdf" class="py-4 px-6 bg-slate-200 hover:bg-slate-300 transition-colors text-slate-900 font-bold rounded-xl w-full max-w-xs mx-auto flex items-center justify-center gap-2">
+                <i data-lucide="external-link" class="w-5 h-5"></i> Abrir PDF
+            </button>
+        </div>
+
+        <div class="p-4 flex gap-2 border-t">
             <button id="btn-dl-pdf" class="flex-1 py-4 bg-slate-900 text-white font-bold rounded-xl uppercase">Descargar</button>
         </div>
     </div>
@@ -324,15 +339,31 @@ window.saveMaterialData = async () => {
 };
 
 // --- PRESUPUESTOS ---
-window.openQuoteModal = () => {
+window.openQuoteModal = (id = null) => {
     if(window.data.clients.length === 0) {
         alert("Primero crea al menos un cliente.");
         return;
     }
+    
+    window.editingId = id; // Asignamos ID si estamos editando
     document.getElementById('q-cl-select').innerHTML = window.data.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     document.getElementById('q-mt-select').innerHTML = window.data.materials.map(m => `<option value="${m.id}">${m.name} (${m.price.toFixed(2)}€)</option>`).join('');
-    window.tempItems = [];
-    document.getElementById('q-ref').value = "";
+    
+    const titleModal = document.getElementById('quote-title-modal');
+    if(titleModal) titleModal.innerText = id ? 'Editar Presupuesto' : 'Nuevo Presupuesto';
+
+    if(id) {
+        // Cargar los datos del presupuesto para editarlos
+        const q = window.data.quotes.find(x => x.id === id);
+        document.getElementById('q-ref').value = q.ref;
+        document.getElementById('q-cl-select').value = q.clientId;
+        window.tempItems = [...q.items];
+    } else {
+        // Limpiar para un nuevo presupuesto
+        window.tempItems = [];
+        document.getElementById('q-ref').value = "";
+    }
+    
     window.renderQuoteList();
     document.getElementById('modal-quote').classList.replace('hidden', 'flex');
 };
@@ -360,8 +391,17 @@ window.saveFinalQuote = async () => {
     const ref = document.getElementById('q-ref').value;
     const cid = document.getElementById('q-cl-select').value;
     if(!ref || window.tempItems.length === 0) return;
+    
     const total = window.tempItems.reduce((a,b)=>a+b.sub,0);
-    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'quotes'), { ref, clientId: cid, items: window.tempItems, total, date: serverTimestamp() });
+    const colRef = collection(db, 'artifacts', appId, 'users', user.uid, 'quotes');
+    
+    if (window.editingId) {
+        // ACTUALIZAR EXISTENTE (conservando la fecha original de creación)
+        await updateDoc(doc(colRef, window.editingId), { ref, clientId: cid, items: window.tempItems, total });
+    } else {
+        // CREAR NUEVO
+        await addDoc(colRef, { ref, clientId: cid, items: window.tempItems, total, date: serverTimestamp() });
+    }
     window.closeAllModals();
 };
 
@@ -392,10 +432,26 @@ const renderMats = () => {
 const renderQts = () => {
     document.getElementById('quotes-list').innerHTML = window.data.quotes.map(q => {
         const c = window.data.clients.find(x => x.id === q.clientId)?.name || 'N/A';
+        // Formateo seguro de fecha
+        const dateObj = q.date ? (q.date.seconds ? new Date(q.date.seconds * 1000) : new Date(q.date)) : new Date();
+        const dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
         return `
-        <div onclick="window.genPDF('${q.id}')" class="bg-white p-5 rounded-2xl border-l-8 border-slate-900 shadow-sm flex justify-between items-center cursor-pointer hover:shadow-md transition-shadow">
-            <div><b class="text-lg uppercase">${q.ref}</b><p class="text-xs text-slate-400 uppercase">${c}</p></div>
-            <div class="text-right"><b>${q.total.toFixed(2)} €</b><br><button onclick="window.delItem('quotes','${q.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
+        <div class="bg-white p-5 rounded-2xl border-l-8 border-slate-900 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:shadow-md transition-shadow">
+            <!-- Zona clickeable para EDITAR -->
+            <div onclick="window.openQuoteModal('${q.id}')" class="cursor-pointer flex-1">
+                <b class="text-lg uppercase text-slate-900">${q.ref}</b>
+                <p class="text-xs text-slate-500 font-semibold mt-1 uppercase">${c} <span class="text-slate-300 mx-1">•</span> ${dateStr}</p>
+            </div>
+            
+            <!-- Acciones: Precio, Botón PDF y Borrar -->
+            <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                <b class="text-lg whitespace-nowrap">${q.total.toFixed(2)} €</b>
+                <div class="flex gap-2">
+                    <button onclick="window.genPDF('${q.id}')" class="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors" title="Ver PDF"><i data-lucide="file-text" class="w-5 h-5"></i></button>
+                    <button onclick="window.delItem('quotes','${q.id}',event)" class="p-2 bg-red-50 rounded-lg text-red-500 hover:bg-red-100 transition-colors" title="Eliminar"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                </div>
+            </div>
         </div>`;
     }).join('');
     lucide.createIcons();
@@ -405,7 +461,9 @@ const renderQts = () => {
 window.genPDF = (id) => {
     const q = window.data.quotes.find(x => x.id === id);
     const client = window.data.clients.find(x => x.id === q.clientId);
-    const dateFormatted = q.date ? new Date(q.date.seconds * 1000).toLocaleDateString() : new Date().toLocaleDateString();
+    const dateObj = q.date ? (q.date.seconds ? new Date(q.date.seconds * 1000) : new Date(q.date)) : new Date();
+    const dateFormatted = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
@@ -419,12 +477,12 @@ window.genPDF = (id) => {
     
     // Información
     doc.setFontSize(10);
-    doc.text("EMISOR:", 20, 45);
+    doc.text("PROYECTO:", 20, 45); // Cambiado a "PROYECTO" para ser coherente
     doc.text("CLIENTE:", 120, 45);
     
-    // Datos Emisor (Sin correo, Con Fecha)
+    // Datos Emisor / Concepto del Presupuesto (Sustituye a ElectriQuote Pro)
     doc.setTextColor(50);
-    doc.text("ELECTRIQUOTE PRO", 20, 52);
+    doc.text(q.ref.toUpperCase(), 20, 52); // Uso del concepto aquí
     doc.setFont("helvetica", "normal");
     doc.text(`Fecha: ${dateFormatted}`, 20, 57);
     
@@ -448,7 +506,27 @@ window.genPDF = (id) => {
         footStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' }
     });
 
-    document.getElementById('pdf-frame').src = URL.createObjectURL(doc.output('blob'));
+    const blobUrl = URL.createObjectURL(doc.output('blob'));
+
+    // LÓGICA DE PREVISUALIZACIÓN Y FALLBACK MÓVIL (Solución iOS/Android)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const iframe = document.getElementById('pdf-frame');
+    const fallback = document.getElementById('pdf-mobile-fallback');
+
+    if (isMobile) {
+        // En móviles, el iframe con BLOBs PDF falla estrepitosamente, mostramos interfaz alternativa
+        iframe.classList.add('hidden');
+        fallback.classList.replace('hidden', 'flex');
+        
+        // El botón en móvil abrirá en una nueva pestaña usando el motor nativo del dispositivo
+        document.getElementById('btn-open-pdf').onclick = () => window.open(blobUrl, '_blank');
+    } else {
+        // En PC funciona perfecto el iframe
+        iframe.classList.remove('hidden');
+        fallback.classList.replace('flex', 'hidden');
+        iframe.src = blobUrl;
+    }
+
     document.getElementById('btn-dl-pdf').onclick = () => doc.save(`Presupuesto_${q.ref}.pdf`);
     document.getElementById('modal-pdf').classList.replace('hidden', 'flex');
 };
