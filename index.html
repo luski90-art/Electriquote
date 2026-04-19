@@ -38,7 +38,7 @@
 </head>
 <body class="min-h-screen pb-24 text-slate-800 bg-slate-50 dark:bg-darkBg dark:text-slate-100">
 
-<!-- PANTALLA DE ACCESO (SIN REGISTRO, AUTOCOMPLETADO DESACTIVADO) -->
+<!-- PANTALLA DE ACCESO -->
 <div id="auth-screen" class="fixed inset-0 bg-slate-900 z-[999] flex flex-col items-center justify-center p-4">
     <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[2.5rem] shadow-2xl p-10 fade-in text-center">
         <div class="bg-slate-900 dark:bg-blue-600 w-16 h-16 rounded-2xl text-white flex items-center justify-center mx-auto mb-6">
@@ -282,9 +282,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebas
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// ==============================================================================
-// 🟢 TUS CREDENCIALES DE FIREBASE EXACTAS Y RESTAURADAS
-// ==============================================================================
 const firebaseConfig = {
     apiKey: "AIzaSyBuX9O3WBR5zX_L-WYdRiwirBl50aUFzlg",
     authDomain: "electriquote-b92c3.firebaseapp.com",
@@ -294,9 +291,7 @@ const firebaseConfig = {
     appId: "1:1050154424016:web:10e5250c9b78c17bb7b0d5"
 };
 
-// 🟢 ESTE ES EL ID ORIGINAL PARA QUE VUELVAN TUS DATOS GUARDADOS
 const appId = 'electri-pro-final'; 
-// ==============================================================================
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -310,7 +305,6 @@ window.tempItems = [];
 window.editingId = null;
 window.dbListeners = [];
 
-// --- DARK MODE ---
 window.toggleDarkMode = () => {
     document.documentElement.classList.toggle('dark');
     const isDark = document.documentElement.classList.contains('dark');
@@ -323,14 +317,12 @@ if (localStorage.getItem('theme') === 'dark') {
     document.documentElement.classList.add('dark');
 }
 
-// --- FILTROS ---
 window.applyFilters = () => {
     renderCls();
     renderMats();
     renderQts();
 };
 
-// --- AUTENTICACIÓN (Solo inicio de sesión) ---
 window.processAuth = async () => {
     const errEl = document.getElementById('auth-error-msg');
     const email = document.getElementById('usr-fld').value.trim();
@@ -353,7 +345,6 @@ window.doLogout = async () => {
     document.getElementById('key-fld').value = '';
 };
 
-// --- NAVEGACIÓN ---
 window.switchView = (v) => {
     ['quotes','materials','clients'].forEach(x => {
         document.getElementById('view-'+x).classList.add('hidden');
@@ -370,7 +361,6 @@ window.closeAllModals = () => {
     window.editingId = null;
 };
 
-// --- SYNC FIREBASE ---
 const syncCol = (name, cb) => {
     if(!user) return () => {}; 
     const path = collection(db, 'artifacts', appId, 'users', user.uid, name);
@@ -380,7 +370,6 @@ const syncCol = (name, cb) => {
     }, (err) => console.error(`Error Sync ${name}:`, err));
 };
 
-// --- CLIENTES ---
 window.openClientModal = (id = null) => {
     window.editingId = id;
     const item = id ? window.data.clients.find(x => x.id === id) : null;
@@ -409,7 +398,6 @@ window.saveClientData = async () => {
     window.closeAllModals();
 };
 
-// --- MATERIALES Y COSTOS ---
 window.openMaterialModal = (id = null) => {
     window.editingId = id;
     const item = id ? window.data.materials.find(x => x.id === id) : null;
@@ -422,7 +410,7 @@ window.openMaterialModal = (id = null) => {
 
 window.saveMaterialData = async () => {
     const price = parseFloat(document.getElementById('mt-price').value) || 0;
-    const cost = parseFloat(document.getElementById('mt-cost').value) || 0; // Se guarda correctamente el costo
+    const cost = parseFloat(document.getElementById('mt-cost').value) || 0; 
     
     if(price < 0 || cost < 0) { alert("Los precios no pueden ser negativos"); return; }
     
@@ -439,7 +427,6 @@ window.saveMaterialData = async () => {
     window.closeAllModals();
 };
 
-// --- PRESUPUESTOS Y CÁLCULOS ---
 window.openQuoteModal = (id = null) => {
     if(window.data.clients.length === 0) { alert("Primero crea un cliente."); return; }
     window.editingId = id;
@@ -468,7 +455,6 @@ window.addItemToQuote = () => {
     const qty = parseFloat(document.getElementById('q-mt-qty').value) || 1;
     const m = window.data.materials.find(x => x.id === mid);
     if(!m || qty <= 0) return;
-    // Añadimos también el costo total a la línea para calcular el beneficio después
     window.tempItems.push({...m, qty, sub: m.price * qty, totalCost: (m.cost || 0) * qty});
     window.renderQuoteList();
 };
@@ -481,7 +467,7 @@ window.renderQuoteList = () => {
     
     list.innerHTML = window.tempItems.map((it, i) => {
         subtotal += it.sub;
-        totalCost += (it.totalCost || 0); // Sumamos los costos
+        totalCost += (it.totalCost || 0); 
         return `<li class="flex justify-between p-2 bg-white dark:bg-slate-700 rounded border dark:border-slate-600 text-sm">
             <span>${it.qty} x ${it.name}</span>
             <div class="flex gap-2 items-center">
@@ -493,7 +479,7 @@ window.renderQuoteList = () => {
     
     const ivaVal = subtotal * (ivaPerc / 100);
     const total = subtotal + ivaVal;
-    const profit = subtotal - totalCost; // Cálculo de beneficio real
+    const profit = subtotal - totalCost;
 
     document.getElementById('q-subtotal-val').innerText = subtotal.toFixed(2) + " €";
     document.getElementById('q-iva-val').innerText = ivaVal.toFixed(2) + " €";
@@ -508,7 +494,6 @@ window.removeTempItem = (index) => {
     window.renderQuoteList();
 };
 
-// --- PLANTILLAS (PACKS DE MATERIALES) ---
 window.openTemplateModal = () => {
     const listUi = document.getElementById('templates-list-ui');
     listUi.innerHTML = window.data.templates.map(t => `
@@ -563,7 +548,6 @@ window.delItem = async (col, id, e) => {
     if(confirm("¿Seguro que quieres eliminar?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
 };
 
-// --- RENDERERS DE LAS VISTAS ---
 const renderCls = () => {
     const search = document.getElementById('main-search').value.toLowerCase();
     const filtered = window.data.clients.filter(c => c.name.toLowerCase().includes(search));
@@ -579,7 +563,8 @@ const renderCls = () => {
                 </div>
             </div>
             <button onclick="window.delItem('clients','${c.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>`).join('');
+        </div>
+    `).join('');
     lucide.createIcons();
 };
 
@@ -590,167 +575,167 @@ const renderMats = () => {
     document.getElementById('materials-list').innerHTML = filtered.map(m => `
         <div onclick="window.openMaterialModal('${m.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
             <div>
-                <b class="block uppercase">${m.name}</b>
-                <div class="flex gap-2 text-xs">
-                    <span class="text-blue-500 font-bold">${m.price.toFixed(2)}€</span>
-                    <span class="text-slate-400">Costo: ${m.cost ? m.cost.toFixed(2) : '0.00'}€</span>
+                <b class="block">${m.name}</b>
+                <div class="flex gap-2 text-[10px] text-slate-400 mt-1">
+                    <span>Venta: ${m.price.toFixed(2)}€</span>
+                    <span>•</span>
+                    <span>Costo: ${(m.cost || 0).toFixed(2)}€</span>
                 </div>
             </div>
             <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>`).join('');
+        </div>
+    `).join('');
     lucide.createIcons();
 };
 
 const renderQts = () => {
     const search = document.getElementById('main-search').value.toLowerCase();
-    const statusF = document.getElementById('status-filter').value;
+    const statusFilter = document.getElementById('status-filter').value;
     
-    const filtered = window.data.quotes.filter(q => {
-        const cName = window.data.clients.find(c => c.id === q.clientId)?.name.toLowerCase() || "";
-        const matchesSearch = q.ref.toLowerCase().includes(search) || cName.includes(search);
-        const matchesStatus = statusF === 'todos' || q.status === statusF;
-        return matchesSearch && matchesStatus;
-    });
+    let filtered = window.data.quotes.filter(q => q.ref.toLowerCase().includes(search));
+    if(statusFilter !== 'todos') filtered = filtered.filter(q => q.status === statusFilter);
 
-    document.getElementById('quotes-list').innerHTML = filtered.map(q => {
-        const clientObj = window.data.clients.find(x => x.id === q.clientId);
-        const c = clientObj?.name || 'N/A';
-        const city = clientObj?.city ? ` - ${clientObj.city}` : ''; // Municipio en tarjeta
-        
-        const dateObj = q.date ? (q.date.seconds ? new Date(q.date.seconds * 1000) : new Date(q.date)) : new Date();
-        const dateStr = dateObj.toLocaleDateString('es-ES');
-        
-        let statusColor = 'bg-slate-300';
-        if (q.status === 'aprobado') statusColor = 'bg-emerald-500';
-        if (q.status === 'rechazado') statusColor = 'bg-red-500';
+    const list = document.getElementById('quotes-list');
+    if(filtered.length === 0) { list.innerHTML = `<div class="p-8 text-center text-slate-400 font-bold">No hay proyectos</div>`; return; }
 
+    list.innerHTML = filtered.map(q => {
+        const client = window.data.clients.find(c => c.id === q.clientId) || {name: 'Cliente Eliminado'};
+        const colors = { pendiente: 'text-amber-500 bg-amber-50', aprobado: 'text-emerald-500 bg-emerald-50', rechazado: 'text-red-500 bg-red-50' };
+        const darkColors = { pendiente: 'dark:bg-amber-500/10', aprobado: 'dark:bg-emerald-500/10', rechazado: 'dark:bg-red-500/10' };
+        
         return `
-        <div class="bg-white dark:bg-darkCard p-5 rounded-2xl border-l-8 border-slate-900 dark:border-blue-600 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:shadow-md transition-shadow">
-            <div onclick="window.openQuoteModal('${q.id}')" class="cursor-pointer flex-1">
-                <div class="flex items-center gap-3">
-                    <b class="text-lg uppercase text-slate-900 dark:text-white">${q.ref}</b>
-                    <div class="w-3 h-3 rounded-full ${statusColor}" title="${q.status || 'Pendiente'}"></div>
+        <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400" onclick="window.openQuoteModal('${q.id}')">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="text-xs font-black text-slate-400 tracking-wider">REF: ${q.ref}</span>
+                    <h4 class="font-bold text-lg leading-tight uppercase">${client.name}</h4>
                 </div>
-                <p class="text-xs text-slate-500 font-semibold mt-1 uppercase">${c}${city}</p>
+                <span class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${colors[q.status || 'pendiente']} ${darkColors[q.status || 'pendiente']}">${q.status || 'Pendiente'}</span>
             </div>
-            
-            <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 dark:border-slate-700">
-                <b class="text-lg whitespace-nowrap">${q.total.toFixed(2)} €</b>
+            <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
+                <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
                 <div class="flex gap-2">
-                    <button onclick="window.genPDF('${q.id}')" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200" title="Ver PDF"><i data-lucide="file-text" class="w-5 h-5"></i></button>
-                    <button onclick="window.delItem('quotes','${q.id}',event)" class="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg text-red-500 hover:bg-red-100" title="Eliminar"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    <button onclick="window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
+                    <button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </div>
-        </div>`;
+        </div>
+        `;
     }).join('');
     lucide.createIcons();
 };
 
-// --- GENERADOR PDF ---
-window.genPDF = (id) => {
+window.generatePDF = (id, event) => {
+    if(event) event.stopPropagation();
     const q = window.data.quotes.find(x => x.id === id);
-    const client = window.data.clients.find(x => x.id === q.clientId);
-    const dateObj = q.date ? (q.date.seconds ? new Date(q.date.seconds * 1000) : new Date(q.date)) : new Date();
-    const dateFormatted = dateObj.toLocaleDateString('es-ES');
+    const client = window.data.clients.find(c => c.id === q.clientId) || {};
     
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    doc.setFillColor(15, 23, 42);
-    doc.rect(0, 0, 210, 35, 'F');
-    doc.setFont("helvetica", "bold");
+    // --- CABECERA ---
     doc.setFontSize(22);
-    doc.setTextColor(255);
-    doc.text("PRESUPUESTO", 20, 22);
+    doc.setFont("helvetica", "bold");
+    doc.text("PRESUPUESTO", 14, 20);
     
-    // FECHA A LA IZQUIERDA
+    // == AQUÍ ESTÁ EL CAMBIO SOLICITADO (LADO IZQUIERDO) ==
+    
+    // Concepto del presupuesto en negrita
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(q.ref.toUpperCase(), 14, 30); 
+    
+    // Fecha justo debajo sin negrita
+    doc.setFont("helvetica", "normal");
+    let dateStr = "Fecha no disponible";
+    if(q.date) {
+        const d = q.date.toDate ? q.date.toDate() : new Date(q.date);
+        dateStr = d.toLocaleDateString('es-ES');
+    }
+    doc.text(dateStr, 14, 36); 
+    
+    // == FIN DEL CAMBIO SOLICITADO ==
+
+    // Detalles del cliente (Lado Derecho)
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text(`Ref: ${q.ref.toUpperCase()}`, 20, 45);
-    doc.text(`Fecha: ${dateFormatted}`, 20, 50);
-    
-    // DATOS CLIENTE A LA DERECHA (INCLUYE MUNICIPIO)
-    doc.setFont("helvetica", "bold");
-    doc.text("CLIENTE:", 120, 45);
-    doc.setTextColor(0);
-    doc.text(client?.name.toUpperCase() || 'N/A', 120, 50);
+    doc.text("Cliente:", 120, 20);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(100);
-    doc.text(`NIF: ${client?.nif || '-'}`, 120, 55);
-    doc.text(client?.phone || '-', 120, 60);
-    
-    const addr = client?.address || '';
-    const city = client?.city || '';
-    const fullAddress = [addr, city].filter(Boolean).join(' - ') || '-';
-    doc.text(fullAddress, 120, 65);
+    doc.text(client.name || 'Sin Nombre', 120, 25);
+    if(client.nif) doc.text("NIF/CIF: " + client.nif, 120, 30);
+    if(client.address) doc.text(client.address, 120, 35);
+    if(client.city) doc.text(client.city, 120, 40);
+    if(client.phone) doc.text("Tlf: " + client.phone, 120, 45);
 
-    const subtotal = q.subtotal || q.items.reduce((a,b)=>a+b.sub,0);
-    const ivaPercentage = parseInt(q.iva || 21);
-    const ivaVal = subtotal * (ivaPercentage / 100);
-
-    // LÓGICA DE IVA (Se oculta si es 0%)
-    let footData = [];
-    if (ivaPercentage === 0) {
-        footData = [['', '', 'TOTAL:', subtotal.toFixed(2)+'€']];
-    } else {
-        footData = [
-            ['', '', 'SUBTOTAL:', subtotal.toFixed(2)+'€'],
-            ['', '', `IVA (${ivaPercentage}%):`, ivaVal.toFixed(2)+'€'],
-            ['', '', 'TOTAL:', (subtotal + ivaVal).toFixed(2)+'€']
-        ];
-    }
+    // Tabla de Elementos
+    const tableData = q.items.map(it => [
+        it.qty.toString(),
+        it.name,
+        it.price.toFixed(2) + " €",
+        it.sub.toFixed(2) + " €"
+    ]);
 
     doc.autoTable({
-        startY: 75,
-        head: [['DESCRIPCIÓN', 'CANT.', 'PRECIO', 'TOTAL']],
-        body: q.items.map(i => [i.name.toUpperCase(), i.qty, i.price.toFixed(2)+'€', i.sub.toFixed(2)+'€']),
-        foot: footData,
+        startY: 60,
+        head: [['Cant.', 'Concepto', 'Precio Und.', 'Subtotal']],
+        body: tableData,
         theme: 'striped',
-        headStyles: { fillColor: [15, 23, 42] },
-        footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' }
+        headStyles: { fillColor: [15, 23, 42] }
     });
 
-    const blobUrl = URL.createObjectURL(doc.output('blob'));
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const finalY = doc.lastAutoTable.finalY + 10;
     
-    if (isMobile) {
+    // Totales Finales
+    doc.setFontSize(10);
+    const ivaVal = (q.subtotal * (parseInt(q.iva || 21)/100)).toFixed(2);
+    
+    doc.text("Subtotal: " + (q.subtotal || 0).toFixed(2) + " €", 140, finalY);
+    doc.text(`IVA (${q.iva || 21}%): ` + ivaVal + " €", 140, finalY + 6);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("TOTAL: " + (q.total || 0).toFixed(2) + " €", 140, finalY + 14);
+
+    // Renderizar PDF
+    const pdfDataUri = doc.output('datauristring');
+    document.getElementById('pdf-frame').src = pdfDataUri;
+    
+    document.getElementById('btn-dl-pdf').onclick = () => doc.save(`Presupuesto_${q.ref}.pdf`);
+    document.getElementById('btn-open-pdf').onclick = () => {
+        const pdfWindow = window.open();
+        pdfWindow.document.write(`<iframe width='100%' height='100%' src='${pdfDataUri}'></iframe>`);
+    };
+
+    if(window.innerWidth < 768) {
         document.getElementById('pdf-frame').classList.add('hidden');
         document.getElementById('pdf-mobile-fallback').classList.replace('hidden', 'flex');
-        document.getElementById('btn-open-pdf').onclick = () => window.open(blobUrl, '_blank');
     } else {
         document.getElementById('pdf-frame').classList.remove('hidden');
         document.getElementById('pdf-mobile-fallback').classList.replace('flex', 'hidden');
-        document.getElementById('pdf-frame').src = blobUrl;
     }
 
-    document.getElementById('btn-dl-pdf').onclick = () => doc.save(`Presupuesto_${q.ref}.pdf`);
     document.getElementById('modal-pdf').classList.replace('hidden', 'flex');
 };
 
-// --- MONITOR DE SESIÓN ---
-onAuthStateChanged(auth, u => {
-    user = u;
-    window.dbListeners.forEach(unsub => unsub());
-    window.dbListeners = [];
-
-    if(u) {
+onAuthStateChanged(auth, (u) => {
+    if (u) {
+        user = u;
         document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-emerald-500";
+        document.getElementById('status-dot').classList.replace('bg-slate-300', 'bg-emerald-500');
+        
+        window.dbListeners.forEach(unsub => unsub());
+        window.dbListeners = [];
+        
         window.dbListeners.push(syncCol('clients', renderCls));
         window.dbListeners.push(syncCol('materials', renderMats));
+        window.dbListeners.push(syncCol('templates', () => {}));
         window.dbListeners.push(syncCol('quotes', renderQts));
-        window.dbListeners.push(syncCol('templates', () => {})); // Para plantillas
     } else {
-        document.getElementById('auth-screen').classList.replace('hidden', 'flex');
-        document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-slate-300";
-        document.getElementById('usr-fld').value = '';
-        document.getElementById('key-fld').value = '';
-        window.data = { clients: [], materials: [], quotes: [], templates: [] };
-        renderCls(); renderMats(); renderQts();
+        user = null;
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('status-dot').classList.replace('bg-emerald-500', 'bg-slate-300');
+        window.dbListeners.forEach(unsub => unsub());
     }
 });
-
-lucide.createIcons();
 </script>
 </body>
 </html>
