@@ -603,12 +603,23 @@ const renderQts = () => {
         const colors = { pendiente: 'text-amber-500 bg-amber-50', aprobado: 'text-emerald-500 bg-emerald-50', rechazado: 'text-red-500 bg-red-50' };
         const darkColors = { pendiente: 'dark:bg-amber-500/10', aprobado: 'dark:bg-emerald-500/10', rechazado: 'dark:bg-red-500/10' };
         
+        let dateStr = "Sin fecha";
+        if(q.date) {
+            const d = q.date.toDate ? q.date.toDate() : new Date(q.date);
+            dateStr = d.toLocaleDateString('es-ES');
+        }
+        
         return `
         <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400" onclick="window.openQuoteModal('${q.id}')">
             <div class="flex justify-between items-start">
                 <div>
                     <span class="text-xs font-black text-slate-400 tracking-wider">REF: ${q.ref}</span>
                     <h4 class="font-bold text-lg leading-tight uppercase">${client.name}</h4>
+                    <div class="flex gap-2 text-[10px] text-slate-500 font-semibold mt-1">
+                        <span>${dateStr}</span>
+                        <span>•</span>
+                        <span>${client.city || 'Sin municipio'}</span>
+                    </div>
                 </div>
                 <span class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${colors[q.status || 'pendiente']} ${darkColors[q.status || 'pendiente']}">${q.status || 'Pendiente'}</span>
             </div>
@@ -634,9 +645,13 @@ window.generatePDF = (id, event) => {
     const doc = new jsPDF();
     
     // --- CABECERA ---
+    doc.setFillColor(15, 23, 42); // Fondo oscuro
+    doc.rect(14, 10, 75, 14, 'F');
+    doc.setTextColor(255, 255, 255); // Texto blanco
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.text("PRESUPUESTO", 14, 20);
+    doc.text("PRESUPUESTO", 16, 20);
+    doc.setTextColor(0, 0, 0); // Volver al color negro estándar
     
     // == AQUÍ ESTÁ EL CAMBIO SOLICITADO (LADO IZQUIERDO) ==
     
