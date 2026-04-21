@@ -581,160 +581,173 @@ const renderMats = () => {
                     <span>•</span>
                     <span>Costo: ${(m.cost || 0).toFixed(2)}€</span>
                 </div>
-            </div>
-            <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-    `).join('');
-    lucide.createIcons();
+</div>
+<button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+</div>
+`).join('');
+lucide.createIcons();
 };
 
 const renderQts = () => {
-    const search = document.getElementById('main-search').value.toLowerCase();
-    const statusFilter = document.getElementById('status-filter').value;
-    
-    let filtered = window.data.quotes.filter(q => q.ref.toLowerCase().includes(search));
-    if(statusFilter !== 'todos') filtered = filtered.filter(q => q.status === statusFilter);
+const search = document.getElementById('main-search').value.toLowerCase();
+const statusFilter = document.getElementById('status-filter').value;
 
-    const list = document.getElementById('quotes-list');
-    if(filtered.length === 0) { list.innerHTML = `<div class="p-8 text-center text-slate-400 font-bold">No hay proyectos</div>`; return; }
+let filtered = window.data.quotes.filter(q => q.ref.toLowerCase().includes(search));
+if(statusFilter !== 'todos') filtered = filtered.filter(q => q.status === statusFilter);
 
-    list.innerHTML = filtered.map(q => {
-        const client = window.data.clients.find(c => c.id === q.clientId) || {name: 'Cliente Eliminado'};
-        const colors = { pendiente: 'text-amber-500 bg-amber-50', aprobado: 'text-emerald-500 bg-emerald-50', rechazado: 'text-red-500 bg-red-50' };
-        const darkColors = { pendiente: 'dark:bg-amber-500/10', aprobado: 'dark:bg-emerald-500/10', rechazado: 'dark:bg-red-500/10' };
-        
-        return `
-        <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400" onclick="window.openQuoteModal('${q.id}')">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="text-xs font-black text-slate-400 tracking-wider">REF: ${q.ref}</span>
-                    <h4 class="font-bold text-lg leading-tight uppercase">${client.name}</h4>
-                </div>
-                <span class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${colors[q.status || 'pendiente']} ${darkColors[q.status || 'pendiente']}">${q.status || 'Pendiente'}</span>
-            </div>
-            <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
-                <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
-                <div class="flex gap-2">
-                    <button onclick="window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
-                    <button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                </div>
-            </div>
-        </div>
-        `;
-    }).join('');
-    lucide.createIcons();
-};
+const list = document.getElementById('quotes-list');
+if(filtered.length === 0) { list.innerHTML = `<div class="p-8 text-center text-slate-400 font-bold">No hay proyectos</div>`; return; }
 
-window.generatePDF = (id, event) => {
-    if(event) event.stopPropagation();
-    const q = window.data.quotes.find(x => x.id === id);
-    const client = window.data.clients.find(c => c.id === q.clientId) || {};
+list.innerHTML = filtered.map(q => {
+    const client = window.data.clients.find(c => c.id === q.clientId) || {name: 'Cliente Eliminado'};
+    const colors = { pendiente: 'text-amber-500 bg-amber-50', aprobado: 'text-emerald-500 bg-emerald-50', rechazado: 'text-red-500 bg-red-50' };
+    const darkColors = { pendiente: 'dark:bg-amber-500/10', aprobado: 'dark:bg-emerald-500/10', rechazado: 'dark:bg-red-500/10' };
     
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    // --- CABECERA ---
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("PRESUPUESTO", 14, 20);
-    
-    // == AQUÍ ESTÁ EL CAMBIO SOLICITADO (LADO IZQUIERDO) ==
-    
-    // Concepto del presupuesto en negrita
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(q.ref.toUpperCase(), 14, 30); 
-    
-    // Fecha justo debajo sin negrita
-    doc.setFont("helvetica", "normal");
-    let dateStr = "Fecha no disponible";
+    // === NUEVO: fecha y localización ===
+    let dateStr = "";
     if(q.date) {
         const d = q.date.toDate ? q.date.toDate() : new Date(q.date);
         dateStr = d.toLocaleDateString('es-ES');
     }
-    doc.text(dateStr, 14, 36); 
-    
-    // == FIN DEL CAMBIO SOLICITADO ==
+    const locationStr = [client.city, client.address].filter(Boolean).join(', ');
 
-    // Detalles del cliente (Lado Derecho)
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Cliente:", 120, 20);
-    doc.setFont("helvetica", "normal");
-    doc.text(client.name || 'Sin Nombre', 120, 25);
-    if(client.nif) doc.text("NIF/CIF: " + client.nif, 120, 30);
-    if(client.address) doc.text(client.address, 120, 35);
-    if(client.city) doc.text(client.city, 120, 40);
-    if(client.phone) doc.text("Tlf: " + client.phone, 120, 45);
+    return `
+    <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400" onclick="window.openQuoteModal('${q.id}')">
+        <div class="flex justify-between items-start">
+            <div>
+                <span class="text-xs font-black text-slate-400 tracking-wider">REF: ${q.ref}</span>
+                <h4 class="font-bold text-lg leading-tight uppercase">${client.name}</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">${dateStr}${locationStr ? ' · ' + locationStr : ''}</p>
+            </div>
+            <span class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${colors[q.status || 'pendiente']} ${darkColors[q.status || 'pendiente']}">${q.status || 'Pendiente'}</span>
+        </div>
+        <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
+            <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
+            <div class="flex gap-2">
+                <button onclick="window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
+                <button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+        </div>
+    </div>
+    `;
+}).join('');
+lucide.createIcons();
+};
 
-    // Tabla de Elementos
-    const tableData = q.items.map(it => [
-        it.qty.toString(),
-        it.name,
-        it.price.toFixed(2) + " €",
-        it.sub.toFixed(2) + " €"
-    ]);
+window.generatePDF = (id, event) => {
+if(event) event.stopPropagation();
+const q = window.data.quotes.find(x => x.id === id);
+const client = window.data.clients.find(c => c.id === q.clientId) || {};
 
-    doc.autoTable({
-        startY: 60,
-        head: [['Cant.', 'Concepto', 'Precio Und.', 'Subtotal']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [15, 23, 42] }
-    });
+const { jsPDF } = window.jspdf;
+const doc = new jsPDF();
 
-    const finalY = doc.lastAutoTable.finalY + 10;
-    
-    // Totales Finales
-    doc.setFontSize(10);
-    const ivaVal = (q.subtotal * (parseInt(q.iva || 21)/100)).toFixed(2);
-    
-    doc.text("Subtotal: " + (q.subtotal || 0).toFixed(2) + " €", 140, finalY);
-    doc.text(`IVA (${q.iva || 21}%): ` + ivaVal + " €", 140, finalY + 6);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("TOTAL: " + (q.total || 0).toFixed(2) + " €", 140, finalY + 14);
+// --- CABECERA ---
+doc.setFontSize(22);
+doc.setFont("helvetica", "bold");
+doc.text("PRESUPUESTO", 14, 20);
 
-    // Renderizar PDF
-    const pdfDataUri = doc.output('datauristring');
-    document.getElementById('pdf-frame').src = pdfDataUri;
-    
-    document.getElementById('btn-dl-pdf').onclick = () => doc.save(`Presupuesto_${q.ref}.pdf`);
-    document.getElementById('btn-open-pdf').onclick = () => {
-        const pdfWindow = window.open();
-        pdfWindow.document.write(`<iframe width='100%' height='100%' src='${pdfDataUri}'></iframe>`);
-    };
+// Concepto
+doc.setFontSize(12);
+doc.setFont("helvetica", "bold");
+doc.text(q.ref.toUpperCase(), 14, 30); 
 
-    if(window.innerWidth < 768) {
-        document.getElementById('pdf-frame').classList.add('hidden');
-        document.getElementById('pdf-mobile-fallback').classList.replace('hidden', 'flex');
-    } else {
-        document.getElementById('pdf-frame').classList.remove('hidden');
-        document.getElementById('pdf-mobile-fallback').classList.replace('flex', 'hidden');
-    }
+// Fecha
+doc.setFont("helvetica", "normal");
+let dateStr = "Fecha no disponible";
+if(q.date) {
+    const d = q.date.toDate ? q.date.toDate() : new Date(q.date);
+    dateStr = d.toLocaleDateString('es-ES');
+}
+doc.text(dateStr, 14, 36); 
 
-    document.getElementById('modal-pdf').classList.replace('hidden', 'flex');
+// Cliente
+doc.setFontSize(10);
+doc.setFont("helvetica", "bold");
+doc.text("Cliente:", 120, 20);
+doc.setFont("helvetica", "normal");
+doc.text(client.name || 'Sin Nombre', 120, 25);
+if(client.nif) doc.text("NIF/CIF: " + client.nif, 120, 30);
+if(client.address) doc.text(client.address, 120, 35);
+if(client.city) doc.text(client.city, 120, 40);
+if(client.phone) doc.text("Tlf: " + client.phone, 120, 45);
+
+// Tabla
+const tableData = q.items.map(it => [
+    it.qty.toString(),
+    it.name,
+    it.price.toFixed(2) + " €",
+    it.sub.toFixed(2) + " €"
+]);
+
+doc.autoTable({
+    startY: 60,
+    head: [['Cant.', 'Concepto', 'Precio Und.', 'Subtotal']],
+    body: tableData,
+    theme: 'striped',
+    headStyles: { fillColor: [15, 23, 42] }
+});
+
+const finalY = doc.lastAutoTable.finalY + 10;
+
+// === MODIFICADO: IVA solo si > 0 ===
+doc.setFontSize(10);
+
+const ivaPercent = parseInt(q.iva || 0);
+const ivaVal = (q.subtotal * (ivaPercent / 100)).toFixed(2);
+
+doc.text("Subtotal: " + (q.subtotal || 0).toFixed(2) + " €", 140, finalY);
+
+let offset = 6;
+if(ivaPercent > 0) {
+    doc.text(`IVA (${ivaPercent}%): ` + ivaVal + " €", 140, finalY + offset);
+    offset += 8;
+}
+
+doc.setFontSize(12);
+doc.setFont("helvetica", "bold");
+doc.text("TOTAL: " + (q.total || 0).toFixed(2) + " €", 140, finalY + offset);
+
+// PDF render
+const pdfDataUri = doc.output('datauristring');
+document.getElementById('pdf-frame').src = pdfDataUri;
+
+document.getElementById('btn-dl-pdf').onclick = () => doc.save(`Presupuesto_${q.ref}.pdf`);
+document.getElementById('btn-open-pdf').onclick = () => {
+    const pdfWindow = window.open();
+    pdfWindow.document.write(`<iframe width='100%' height='100%' src='${pdfDataUri}'></iframe>`);
+};
+
+if(window.innerWidth < 768) {
+    document.getElementById('pdf-frame').classList.add('hidden');
+    document.getElementById('pdf-mobile-fallback').classList.replace('hidden', 'flex');
+} else {
+    document.getElementById('pdf-frame').classList.remove('hidden');
+    document.getElementById('pdf-mobile-fallback').classList.replace('flex', 'hidden');
+}
+
+document.getElementById('modal-pdf').classList.replace('hidden', 'flex');
 };
 
 onAuthStateChanged(auth, (u) => {
-    if (u) {
-        user = u;
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('status-dot').classList.replace('bg-slate-300', 'bg-emerald-500');
-        
-        window.dbListeners.forEach(unsub => unsub());
-        window.dbListeners = [];
-        
-        window.dbListeners.push(syncCol('clients', renderCls));
-        window.dbListeners.push(syncCol('materials', renderMats));
-        window.dbListeners.push(syncCol('templates', () => {}));
-        window.dbListeners.push(syncCol('quotes', renderQts));
-    } else {
-        user = null;
-        document.getElementById('auth-screen').classList.remove('hidden');
-        document.getElementById('status-dot').classList.replace('bg-emerald-500', 'bg-slate-300');
-        window.dbListeners.forEach(unsub => unsub());
-    }
+if (u) {
+    user = u;
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('status-dot').classList.replace('bg-slate-300', 'bg-emerald-500');
+    
+    window.dbListeners.forEach(unsub => unsub());
+    window.dbListeners = [];
+    
+    window.dbListeners.push(syncCol('clients', renderCls));
+    window.dbListeners.push(syncCol('materials', renderMats));
+    window.dbListeners.push(syncCol('templates', () => {}));
+    window.dbListeners.push(syncCol('quotes', renderQts));
+} else {
+    user = null;
+    document.getElementById('auth-screen').classList.remove('hidden');
+    document.getElementById('status-dot').classList.replace('bg-emerald-500', 'bg-slate-300');
+    window.dbListeners.forEach(unsub => unsub());
+}
 });
 </script>
 </body>
