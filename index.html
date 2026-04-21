@@ -555,22 +555,23 @@ window.saveFinalQuote = async () => {
     window.closeAllModals();
 };
 
-// FUNCIÓN CORREGIDA: Funciona para todas las colecciones
+// FUNCIÓN DE ELIMINAR BLINDADA
 window.delItem = async (col, id, e) => {
     if (e) {
-        if (typeof e.stopPropagation === 'function') e.stopPropagation();
-        if (typeof e.preventDefault === 'function') e.preventDefault();
+        e.stopPropagation();
+        if (e.preventDefault) e.preventDefault();
     }
     
-    if (!user) return;
+    if (!user || !id) return;
     
-    if (confirm("¿Seguro que quieres eliminar este elemento?")) {
+    if (confirm("¿Estás seguro de que quieres eliminar este elemento?")) {
         try {
-            const docRef = doc(db, 'artifacts', appId, 'users', user.uid, col, id);
+            // Referencia exacta al documento
+            const docRef = doc(db, 'artifacts', appId, 'users', user.uid, col, String(id));
             await deleteDoc(docRef);
         } catch (err) {
-            console.error("Error eliminando:", err);
-            alert("No se pudo eliminar el elemento.");
+            console.error("Error detallado Firebase:", err);
+            alert("Error: No se pudo eliminar el elemento de la base de datos.");
         }
     }
 };
