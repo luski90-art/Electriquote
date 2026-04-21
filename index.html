@@ -258,28 +258,6 @@
     </div>
 </div>
 
-<!-- MODAL PDF -->
-<div id="modal-pdf" class="fixed inset-0 bg-slate-900/90 hidden items-center justify-center p-4 z-[200]">
-    <div class="bg-white dark:bg-darkCard w-full max-w-4xl h-[90vh] rounded-[1.5rem] flex flex-col overflow-hidden shadow-2xl">
-        <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 flex justify-between items-center">
-            <span class="font-bold">Diseño Presupuesto</span>
-            <button onclick="window.closeAllModals()"><i data-lucide="x"></i></button>
-        </div>
-        <iframe id="pdf-frame" class="flex-1 border-none w-full h-full"></iframe>
-        <div id="pdf-mobile-fallback" class="hidden flex-1 flex-col items-center justify-center p-6 text-center bg-slate-50 dark:bg-slate-900">
-            <i data-lucide="smartphone" class="w-12 h-12 text-slate-500 mb-4"></i>
-            <h4 class="font-bold text-xl mb-2">Vista móvil</h4>
-            <p class="text-slate-500 mb-6 text-sm">Los navegadores móviles requieren descarga o apertura externa.</p>
-            <button id="btn-open-pdf" class="py-4 px-6 bg-blue-600 text-white font-bold rounded-xl w-full max-w-xs flex items-center justify-center gap-2">
-                <i data-lucide="external-link" class="w-5 h-5"></i> Abrir PDF
-            </button>
-        </div>
-        <div class="p-4 flex gap-2 border-t dark:border-slate-700">
-            <button id="btn-dl-pdf" class="flex-1 py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl uppercase">Descargar Archivo</button>
-        </div>
-    </div>
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
@@ -306,7 +284,8 @@ let user = null;
 window.data = { clients: [], materials: [], quotes: [], templates: [] };
 window.tempItems = [];
 window.editingId = null;
-window.dbListeners = [];
+
+// --- FUNCIONES GLOBALES ---
 
 window.toggleDarkMode = () => {
     document.documentElement.classList.toggle('dark');
@@ -364,14 +343,50 @@ window.closeAllModals = () => {
     window.editingId = null;
 };
 
-const syncCol = (name, cb) => {
-    if(!user) return () => {}; 
-    const path = collection(db, 'artifacts', appId, 'users', user.uid, name);
-    return onSnapshot(path, s => {
-        window.data[name] = s.docs.map(d => ({id: d.id, ...d.data()}));
-        cb();
-    }, (err) => console.error(`Error Sync ${name}:`, err));
+// --- ELIMINAR (LA CORRECCIÓN) ---
+window.delItem = async (colName, id, e) => {
+    if(e) e.stopPropagation();
+    if(!confirm("¿Seguro que quieres eliminar este elemento?")) return;
+    
+    try {
+        const docRef = doc(db, 'artifacts', appId, 'users', user.uid, colName, id);
+        await deleteDoc(docRef);
+        console.log("Eliminado con éxito");
+    } catch (err) {
+        console.error("Error al eliminar:", err);
+        alert("Error al eliminar. Revisa la consola.");
+    }
 };
+
+// --- GESTIÓN DE DATOS ---
+
+const syncData = () => {
+    const collections = ['clients', 'materials', 'quotes', 'templates'];
+    collections.forEach(name => {
+        const path = collection(db, 'artifacts', appId, 'users', user.uid, name);
+        onSnapshot(path, s => {
+            window.data[name] = s.docs.map(d => ({id: d.id, ...d.data()}));
+            if(name === 'clients') renderCls();
+            if(name === 'materials') renderMats();
+            if(name === 'quotes') renderQts();
+            if(name === 'templates' && document.getElementById('modal-template').classList.contains('flex')) window.openTemplateModal();
+        });
+    });
+};
+
+onAuthStateChanged(auth, (u) => {
+    user = u;
+    if (u) {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+        syncData();
+    } else {
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('status-dot').className = "w-3 h-3 rounded-full bg-slate-300";
+    }
+});
+
+// --- CLIENTES ---
 
 window.openClientModal = (id = null) => {
     window.editingId = id;
@@ -401,6 +416,29 @@ window.saveClientData = async () => {
     window.closeAllModals();
 };
 
+const renderCls = () => {
+    const search = document.getElementById('main-search').value.toLowerCase();
+    const list = document.getElementById('clients-list');
+    if(!list) return;
+    const filtered = window.data.clients.filter(c => c.name.toLowerCase().includes(search));
+    list.innerHTML = filtered.map(c => `
+        <div onclick="window.openClientModal('${c.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
+            <div>
+                <b class="block uppercase">${c.name}</b>
+                <div class="flex gap-2 text-[10px] text-slate-400">
+                    <span>${c.phone}</span>
+                    <span>•</span>
+                    <span>${c.nif || 'Sin NIF'}</span>
+                </div>
+            </div>
+            <button onclick="window.delItem('clients','${c.id}',event)" class="text-slate-300 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>
+    `).join('');
+    lucide.createIcons();
+};
+
+// --- MATERIALES ---
+
 window.openMaterialModal = (id = null) => {
     window.editingId = id;
     const item = id ? window.data.materials.find(x => x.id === id) : null;
@@ -414,9 +452,6 @@ window.openMaterialModal = (id = null) => {
 window.saveMaterialData = async () => {
     const price = parseFloat(document.getElementById('mt-price').value) || 0;
     const cost = parseFloat(document.getElementById('mt-cost').value) || 0; 
-    
-    if(price < 0 || cost < 0) { alert("Los precios no pueden ser negativos"); return; }
-    
     const d = { 
         name: document.getElementById('mt-name').value.trim(), 
         price: price, 
@@ -429,6 +464,25 @@ window.saveMaterialData = async () => {
     else await addDoc(c, d);
     window.closeAllModals();
 };
+
+const renderMats = () => {
+    const search = document.getElementById('main-search').value.toLowerCase();
+    const list = document.getElementById('materials-list');
+    if(!list) return;
+    const filtered = window.data.materials.filter(m => m.name.toLowerCase().includes(search));
+    list.innerHTML = filtered.map(m => `
+        <div onclick="window.openMaterialModal('${m.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
+            <div>
+                <b class="block uppercase text-sm">${m.name}</b>
+                <span class="text-blue-500 font-bold text-xs">${m.price.toFixed(2)}€</span>
+            </div>
+            <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>
+    `).join('');
+    lucide.createIcons();
+};
+
+// --- PRESUPUESTOS ---
 
 window.openQuoteModal = (id = null) => {
     if(window.data.clients.length === 0) { alert("Primero crea un cliente."); return; }
@@ -485,8 +539,6 @@ window.renderQuoteList = () => {
     const profit = subtotal - totalCost;
 
     document.getElementById('q-subtotal-val').innerText = subtotal.toFixed(2) + " €";
-    
-    // IVA Condicional
     const ivaRow = document.getElementById('q-iva-row');
     if(ivaPerc > 0) {
         ivaRow.classList.remove('hidden');
@@ -494,48 +546,14 @@ window.renderQuoteList = () => {
     } else {
         ivaRow.classList.add('hidden');
     }
-
     document.getElementById('q-total-val').innerText = total.toFixed(2) + " €";
     document.getElementById('q-profit-val').innerText = profit.toFixed(2) + " €";
-    
     lucide.createIcons();
 };
 
 window.removeTempItem = (index) => {
     window.tempItems.splice(index, 1);
     window.renderQuoteList();
-};
-
-window.openTemplateModal = () => {
-    const listUi = document.getElementById('templates-list-ui');
-    listUi.innerHTML = window.data.templates.map(t => `
-        <div class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded border dark:border-slate-700 text-xs font-bold">
-            <span>${t.name}</span>
-            <button onclick="window.delItem('templates','${t.id}',event)" class="text-red-400"><i data-lucide="trash" class="w-3 h-3"></i></button>
-        </div>
-    `).join('');
-    lucide.createIcons();
-    document.getElementById('modal-template').classList.replace('hidden', 'flex');
-};
-
-window.saveCurrentAsTemplate = async () => {
-    const name = document.getElementById('tp-name').value.trim();
-    if(!name || window.tempItems.length === 0) { alert("Añade materiales a la lista del presupuesto y dales un nombre"); return; }
-    const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
-    await addDoc(c, { name, items: window.tempItems });
-    document.getElementById('tp-name').value = "";
-    alert("Plantilla guardada");
-    window.openTemplateModal();
-};
-
-window.addTemplateItemsToQuote = () => {
-    const tid = document.getElementById('q-tp-select').value;
-    if(!tid) return;
-    const template = window.data.templates.find(t => t.id === tid);
-    if(template) {
-        window.tempItems = [...window.tempItems, ...template.items];
-        window.renderQuoteList();
-    }
 };
 
 window.saveFinalQuote = async () => {
@@ -555,203 +573,75 @@ window.saveFinalQuote = async () => {
     window.closeAllModals();
 };
 
-window.delItem = async (col, id, e) => {
-    if(e) e.stopPropagation();
-    if(confirm("¿Seguro que quieres eliminar?")) {
-        try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
-        } catch (err) {
-            console.error("Error eliminando:", err);
-        }
-    }
-};
-
-const renderCls = () => {
-    const search = document.getElementById('main-search').value.toLowerCase();
-    const filtered = window.data.clients.filter(c => c.name.toLowerCase().includes(search));
-    
-    document.getElementById('clients-list').innerHTML = filtered.map(c => `
-        <div onclick="window.openClientModal('${c.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
-            <div>
-                <b class="block uppercase">${c.name}</b>
-                <div class="flex gap-2 text-[10px] text-slate-400">
-                    <span>${c.phone}</span>
-                    <span>•</span>
-                    <span>${c.nif || 'Sin NIF'}</span>
-                </div>
-            </div>
-            <button onclick="window.delItem('clients','${c.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-    `).join('');
-    lucide.createIcons();
-};
-
-const renderMats = () => {
-    const search = document.getElementById('main-search').value.toLowerCase();
-    const filtered = window.data.materials.filter(m => m.name.toLowerCase().includes(search));
-    
-    document.getElementById('materials-list').innerHTML = filtered.map(m => `
-        <div onclick="window.openMaterialModal('${m.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
-            <div>
-                <b class="block">${m.name}</b>
-                <div class="flex gap-2 text-[10px] text-slate-400 mt-1">
-                    <span>Venta: ${m.price.toFixed(2)}€</span>
-                    <span>•</span>
-                    <span>Costo: ${(m.cost || 0).toFixed(2)}€</span>
-                </div>
-            </div>
-            <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-    `).join('');
-    lucide.createIcons();
-};
-
 const renderQts = () => {
     const search = document.getElementById('main-search').value.toLowerCase();
-    const statusFilter = document.getElementById('status-filter').value;
-    
-    let filtered = window.data.quotes.filter(q => q.ref.toLowerCase().includes(search));
-    if(statusFilter !== 'todos') filtered = filtered.filter(q => q.status === statusFilter);
-
+    const filter = document.getElementById('status-filter').value;
     const list = document.getElementById('quotes-list');
-    if(filtered.length === 0) { list.innerHTML = `<div class="p-8 text-center text-slate-400 font-bold">No hay proyectos</div>`; return; }
+    if(!list) return;
+
+    const filtered = window.data.quotes.filter(q => {
+        const matchesSearch = q.ref.toLowerCase().includes(search);
+        const matchesStatus = filter === 'todos' || q.status === filter;
+        return matchesSearch && matchesStatus;
+    });
 
     list.innerHTML = filtered.map(q => {
-        const client = window.data.clients.find(c => c.id === q.clientId) || {name: 'Cliente Eliminado'};
-        const colors = { pendiente: 'text-amber-500 bg-amber-50', aprobado: 'text-emerald-500 bg-emerald-50', rechazado: 'text-red-500 bg-red-50' };
-        const darkColors = { pendiente: 'dark:bg-amber-500/10', aprobado: 'dark:bg-emerald-500/10', rechazado: 'dark:bg-red-500/10' };
-        
+        const client = window.data.clients.find(c => c.id === q.clientId);
         return `
-        <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400" onclick="window.openQuoteModal('${q.id}')">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="text-xs font-black text-slate-400 tracking-wider">REF: ${q.ref}</span>
-                    <h4 class="font-bold text-lg leading-tight uppercase">${client.name}</h4>
+            <div onclick="window.openQuoteModal('${q.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${q.status === 'aprobado' ? 'bg-emerald-100 text-emerald-600' : q.status === 'rechazado' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'}">${q.status || 'pendiente'}</span>
+                        <b class="text-sm">${q.ref}</b>
+                    </div>
+                    <p class="text-xs text-slate-400">${client ? client.name : 'Cliente desconocido'}</p>
                 </div>
-                <span class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${colors[q.status || 'pendiente']} ${darkColors[q.status || 'pendiente']}">${q.status || 'Pendiente'}</span>
-            </div>
-            <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
-                <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
-                <div class="flex gap-2">
-                    <button onclick="event.stopPropagation(); window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
-                    <button onclick="event.stopPropagation(); window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <div class="text-right flex items-center gap-4">
+                    <div>
+                        <p class="font-black text-blue-500">${q.total.toFixed(2)}€</p>
+                        <p class="text-[9px] text-slate-400">IVA Inc.</p>
+                    </div>
+                    <button onclick="window.delItem('quotes','${q.id}',event)" class="text-slate-300 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </div>
-        </div>
         `;
     }).join('');
     lucide.createIcons();
 };
 
-window.generatePDF = (id, event) => {
-    if(event) event.stopPropagation();
-    const q = window.data.quotes.find(x => x.id === id);
-    const client = window.data.clients.find(c => c.id === q.clientId) || {};
-    
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("PRESUPUESTO", 14, 20);
-    
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(q.ref.toUpperCase(), 14, 30); 
-    
-    doc.setFont("helvetica", "normal");
-    let dateStr = "Fecha no disponible";
-    if(q.date) {
-        const d = q.date.toDate ? q.date.toDate() : new Date(q.date);
-        dateStr = d.toLocaleDateString('es-ES');
-    }
-    doc.text(dateStr, 14, 36); 
+// --- PLANTILLAS ---
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Cliente:", 120, 20);
-    doc.setFont("helvetica", "normal");
-    doc.text(client.name || 'Sin Nombre', 120, 25);
-    if(client.nif) doc.text("NIF/CIF: " + client.nif, 120, 30);
-    if(client.address) doc.text(client.address, 120, 35);
-    if(client.city) doc.text(client.city, 120, 40);
-    if(client.phone) doc.text("Tlf: " + client.phone, 120, 45);
-
-    const tableData = q.items.map(it => [
-        it.qty.toString(),
-        it.name,
-        it.price.toFixed(2) + " €",
-        it.sub.toFixed(2) + " €"
-    ]);
-
-    doc.autoTable({
-        startY: 60,
-        head: [['Cant.', 'Concepto', 'Precio Und.', 'Subtotal']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [15, 23, 42] }
-    });
-
-    let finalY = doc.lastAutoTable.finalY + 10;
-    
-    doc.setFontSize(10);
-    doc.text("Subtotal: " + (q.subtotal || 0).toFixed(2) + " €", 140, finalY);
-    
-    // IVA Condicional PDF
-    const ivaPerc = parseInt(q.iva || 0);
-    if (ivaPerc > 0) {
-        const ivaVal = (q.subtotal * (ivaPerc / 100)).toFixed(2);
-        doc.text(`IVA (${ivaPerc}%): ` + ivaVal + " €", 140, finalY + 6);
-        finalY += 14;
-    } else {
-        finalY += 8;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("TOTAL: " + (q.total || 0).toFixed(2) + " €", 140, finalY);
-
-    const pdfDataUri = doc.output('datauristring');
-    document.getElementById('pdf-frame').src = pdfDataUri;
-    
-    document.getElementById('btn-dl-pdf').onclick = () => doc.save(`Presupuesto_${q.ref}.pdf`);
-    document.getElementById('btn-open-pdf').onclick = () => {
-        const pdfWindow = window.open();
-        pdfWindow.document.write(`<iframe width='100%' height='100%' src='${pdfDataUri}'></iframe>`);
-    };
-
-    if(window.innerWidth < 768) {
-        document.getElementById('pdf-frame').classList.add('hidden');
-        document.getElementById('pdf-mobile-fallback').classList.replace('hidden', 'flex');
-    } else {
-        document.getElementById('pdf-frame').classList.remove('hidden');
-        document.getElementById('pdf-mobile-fallback').classList.replace('flex', 'hidden');
-    }
-
-    document.getElementById('modal-pdf').classList.replace('hidden', 'flex');
+window.openTemplateModal = () => {
+    const listUi = document.getElementById('templates-list-ui');
+    listUi.innerHTML = window.data.templates.map(t => `
+        <div class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded border dark:border-slate-700 text-xs font-bold">
+            <span>${t.name}</span>
+            <button onclick="window.delItem('templates','${t.id}',event)" class="text-red-400 p-1"><i data-lucide="trash" class="w-3 h-3"></i></button>
+        </div>
+    `).join('');
+    lucide.createIcons();
+    document.getElementById('modal-template').classList.replace('hidden', 'flex');
 };
 
-onAuthStateChanged(auth, (u) => {
-    if (u) {
-        user = u;
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('status-dot').classList.replace('bg-slate-300', 'bg-emerald-500');
-        
-        window.dbListeners.forEach(unsub => unsub());
-        window.dbListeners = [];
-        
-        window.dbListeners.push(syncCol('clients', renderCls));
-        window.dbListeners.push(syncCol('materials', renderMats));
-        window.dbListeners.push(syncCol('templates', () => {}));
-        window.dbListeners.push(syncCol('quotes', renderQts));
-    } else {
-        user = null;
-        document.getElementById('auth-screen').classList.remove('hidden');
-        document.getElementById('status-dot').classList.replace('bg-emerald-500', 'bg-slate-300');
-        window.dbListeners.forEach(unsub => unsub());
+window.saveCurrentAsTemplate = async () => {
+    const name = document.getElementById('tp-name').value.trim();
+    if(!name || window.tempItems.length === 0) { alert("Añade materiales y dales un nombre"); return; }
+    const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
+    await addDoc(c, { name, items: window.tempItems });
+    document.getElementById('tp-name').value = "";
+    alert("Plantilla guardada");
+};
+
+window.addTemplateItemsToQuote = () => {
+    const tid = document.getElementById('q-tp-select').value;
+    if(!tid) return;
+    const template = window.data.templates.find(t => t.id === tid);
+    if(template) {
+        window.tempItems = [...window.tempItems, ...template.items];
+        window.renderQuoteList();
     }
-});
+};
+
 </script>
 </body>
 </html>
-
