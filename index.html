@@ -486,7 +486,7 @@ window.renderQuoteList = () => {
 
     document.getElementById('q-subtotal-val').innerText = subtotal.toFixed(2) + " €";
     
-    // CORRECCIÓN: Mostrar IVA solo si > 0%
+    // IVA Condicional
     const ivaRow = document.getElementById('q-iva-row');
     if(ivaPerc > 0) {
         ivaRow.classList.remove('hidden');
@@ -543,27 +543,27 @@ window.saveFinalQuote = async () => {
     const cid = document.getElementById('q-cl-select').value;
     const status = document.getElementById('q-status').value;
     const iva = document.getElementById('q-iva').value;
-    if(!ref || window.tempItems.length === 0) { alert("Asegúrate de poner una referencia y añadir elementos"); return; }
+    if(!ref || window.tempItems.length === 0) return;
     
     const subtotal = window.tempItems.reduce((a,b)=>a+b.sub,0);
     const total = subtotal * (1 + (parseInt(iva)/100));
     const colRef = collection(db, 'artifacts', appId, 'users', user.uid, 'quotes');
     
     const docData = { ref, clientId: cid, status, iva, items: window.tempItems, subtotal, total, date: serverTimestamp() };
-    
-    try {
-        if (window.editingId) await updateDoc(doc(colRef, window.editingId), docData);
-        else await addDoc(colRef, docData);
-        window.closeAllModals();
-    } catch (err) {
-        console.error("Error guardando:", err);
-        alert("Error al guardar el presupuesto.");
-    }
+    if (window.editingId) await updateDoc(doc(colRef, window.editingId), docData);
+    else await addDoc(colRef, docData);
+    window.closeAllModals();
 };
 
 window.delItem = async (col, id, e) => {
-    e.stopPropagation();
-    if(confirm("¿Seguro que quieres eliminar?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
+    if(e) e.stopPropagation();
+    if(confirm("¿Seguro que quieres eliminar?")) {
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
+        } catch (err) {
+            console.error("Error eliminando:", err);
+        }
+    }
 };
 
 const renderCls = () => {
@@ -633,8 +633,8 @@ const renderQts = () => {
             <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
                 <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
                 <div class="flex gap-2">
-                    <button onclick="window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
-                    <button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <button onclick="event.stopPropagation(); window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
+                    <button onclick="event.stopPropagation(); window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </div>
         </div>
@@ -695,17 +695,16 @@ window.generatePDF = (id, event) => {
     let finalY = doc.lastAutoTable.finalY + 10;
     
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
     doc.text("Subtotal: " + (q.subtotal || 0).toFixed(2) + " €", 140, finalY);
     
-    // CORRECCIÓN: IVA solo aparece en el PDF si es > 0
+    // IVA Condicional PDF
     const ivaPerc = parseInt(q.iva || 0);
     if (ivaPerc > 0) {
         const ivaVal = (q.subtotal * (ivaPerc / 100)).toFixed(2);
         doc.text(`IVA (${ivaPerc}%): ` + ivaVal + " €", 140, finalY + 6);
-        finalY += 14; 
+        finalY += 14;
     } else {
-        finalY += 8; 
+        finalY += 8;
     }
 
     doc.setFontSize(12);
