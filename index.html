@@ -555,22 +555,13 @@ window.saveFinalQuote = async () => {
     window.closeAllModals();
 };
 
-// FUNCIÓN DE ELIMINAR CORREGIDA
 window.delItem = async (col, id, e) => {
-    if (e) {
-        if (e.stopPropagation) e.stopPropagation();
-        if (e.preventDefault) e.preventDefault();
-    }
-    
-    if (!user || !id) return;
-    
-    if (confirm("¿Estás seguro de que quieres eliminar este elemento?")) {
+    if(e) e.stopPropagation();
+    if(confirm("¿Seguro que quieres eliminar?")) {
         try {
-            const docRef = doc(db, 'artifacts', appId, 'users', user.uid, col, String(id));
-            await deleteDoc(docRef);
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
         } catch (err) {
-            console.error("Error al eliminar:", err);
-            alert("Error al intentar eliminar el elemento.");
+            console.error("Error eliminando:", err);
         }
     }
 };
@@ -589,7 +580,7 @@ const renderCls = () => {
                     <span>${c.nif || 'Sin NIF'}</span>
                 </div>
             </div>
-            <button onclick="event.stopPropagation(); window.delItem('clients','${c.id}',event)" class="text-slate-300 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <button onclick="window.delItem('clients','${c.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
         </div>
     `).join('');
     lucide.createIcons();
@@ -609,7 +600,7 @@ const renderMats = () => {
                     <span>Costo: ${(m.cost || 0).toFixed(2)}€</span>
                 </div>
             </div>
-            <button onclick="event.stopPropagation(); window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
         </div>
     `).join('');
     lucide.createIcons();
@@ -653,7 +644,7 @@ const renderQts = () => {
 };
 
 window.generatePDF = (id, event) => {
-    if(event && event.stopPropagation) event.stopPropagation();
+    if(event) event.stopPropagation();
     const q = window.data.quotes.find(x => x.id === id);
     const client = window.data.clients.find(c => c.id === q.clientId) || {};
     
@@ -706,6 +697,7 @@ window.generatePDF = (id, event) => {
     doc.setFontSize(10);
     doc.text("Subtotal: " + (q.subtotal || 0).toFixed(2) + " €", 140, finalY);
     
+    // IVA Condicional PDF
     const ivaPerc = parseInt(q.iva || 0);
     if (ivaPerc > 0) {
         const ivaVal = (q.subtotal * (ivaPerc / 100)).toFixed(2);
@@ -762,3 +754,4 @@ onAuthStateChanged(auth, (u) => {
 </script>
 </body>
 </html>
+
