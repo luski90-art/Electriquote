@@ -221,7 +221,8 @@
                         <span>SUBTOTAL</span>
                         <span id="q-subtotal-val">0.00 €</span>
                     </div>
-                    <div class="flex justify-between text-xs font-bold text-slate-400">
+                    <!-- IVA Condicional en UI -->
+                    <div id="q-iva-row" class="flex justify-between text-xs font-bold text-slate-400">
                         <span>IVA</span>
                         <span id="q-iva-val">0.00 €</span>
                     </div>
@@ -237,7 +238,9 @@
                 </div>
             </div>
         </div>
-        <div class="p-6 border-t dark:border-slate-700"><button onclick="window.saveFinalQuote()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl text-lg uppercase tracking-wider">Guardar Presupuesto</button></div>
+        <div class="p-6 border-t dark:border-slate-700">
+            <button onclick="window.saveFinalQuote()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl text-lg uppercase tracking-wider">Guardar Presupuesto</button>
+        </div>
     </div>
 </div>
 
@@ -482,7 +485,16 @@ window.renderQuoteList = () => {
     const profit = subtotal - totalCost;
 
     document.getElementById('q-subtotal-val').innerText = subtotal.toFixed(2) + " €";
-    document.getElementById('q-iva-val').innerText = ivaVal.toFixed(2) + " €";
+    
+    // CORRECCIÓN: Mostrar IVA solo si > 0%
+    const ivaRow = document.getElementById('q-iva-row');
+    if(ivaPerc > 0) {
+        ivaRow.classList.remove('hidden');
+        document.getElementById('q-iva-val').innerText = ivaVal.toFixed(2) + " €";
+    } else {
+        ivaRow.classList.add('hidden');
+    }
+
     document.getElementById('q-total-val').innerText = total.toFixed(2) + " €";
     document.getElementById('q-profit-val').innerText = profit.toFixed(2) + " €";
     
@@ -531,16 +543,22 @@ window.saveFinalQuote = async () => {
     const cid = document.getElementById('q-cl-select').value;
     const status = document.getElementById('q-status').value;
     const iva = document.getElementById('q-iva').value;
-    if(!ref || window.tempItems.length === 0) return;
+    if(!ref || window.tempItems.length === 0) { alert("Asegúrate de poner una referencia y añadir elementos"); return; }
     
     const subtotal = window.tempItems.reduce((a,b)=>a+b.sub,0);
     const total = subtotal * (1 + (parseInt(iva)/100));
     const colRef = collection(db, 'artifacts', appId, 'users', user.uid, 'quotes');
     
     const docData = { ref, clientId: cid, status, iva, items: window.tempItems, subtotal, total, date: serverTimestamp() };
-    if (window.editingId) await updateDoc(doc(colRef, window.editingId), docData);
-    else await addDoc(colRef, docData);
-    window.closeAllModals();
+    
+    try {
+        if (window.editingId) await updateDoc(doc(colRef, window.editingId), docData);
+        else await addDoc(colRef, docData);
+        window.closeAllModals();
+    } catch (err) {
+        console.error("Error guardando:", err);
+        alert("Error al guardar el presupuesto.");
+    }
 };
 
 window.delItem = async (col, id, e) => {
@@ -633,19 +651,14 @@ window.generatePDF = (id, event) => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // --- CABECERA ---
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
     doc.text("PRESUPUESTO", 14, 20);
     
-    // == AQUÍ ESTÁ EL CAMBIO SOLICITADO (LADO IZQUIERDO) ==
-    
-    // Concepto del presupuesto en negrita
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text(q.ref.toUpperCase(), 14, 30); 
     
-    // Fecha justo debajo sin negrita
     doc.setFont("helvetica", "normal");
     let dateStr = "Fecha no disponible";
     if(q.date) {
@@ -653,10 +666,7 @@ window.generatePDF = (id, event) => {
         dateStr = d.toLocaleDateString('es-ES');
     }
     doc.text(dateStr, 14, 36); 
-    
-    // == FIN DEL CAMBIO SOLICITADO ==
 
-    // Detalles del cliente (Lado Derecho)
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.text("Cliente:", 120, 20);
@@ -667,7 +677,6 @@ window.generatePDF = (id, event) => {
     if(client.city) doc.text(client.city, 120, 40);
     if(client.phone) doc.text("Tlf: " + client.phone, 120, 45);
 
-    // Tabla de Elementos
     const tableData = q.items.map(it => [
         it.qty.toString(),
         it.name,
@@ -683,19 +692,26 @@ window.generatePDF = (id, event) => {
         headStyles: { fillColor: [15, 23, 42] }
     });
 
-    const finalY = doc.lastAutoTable.finalY + 10;
+    let finalY = doc.lastAutoTable.finalY + 10;
     
-    // Totales Finales
     doc.setFontSize(10);
-    const ivaVal = (q.subtotal * (parseInt(q.iva || 21)/100)).toFixed(2);
-    
+    doc.setFont("helvetica", "normal");
     doc.text("Subtotal: " + (q.subtotal || 0).toFixed(2) + " €", 140, finalY);
-    doc.text(`IVA (${q.iva || 21}%): ` + ivaVal + " €", 140, finalY + 6);
+    
+    // CORRECCIÓN: IVA solo aparece en el PDF si es > 0
+    const ivaPerc = parseInt(q.iva || 0);
+    if (ivaPerc > 0) {
+        const ivaVal = (q.subtotal * (ivaPerc / 100)).toFixed(2);
+        doc.text(`IVA (${ivaPerc}%): ` + ivaVal + " €", 140, finalY + 6);
+        finalY += 14; 
+    } else {
+        finalY += 8; 
+    }
+
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text("TOTAL: " + (q.total || 0).toFixed(2) + " €", 140, finalY + 14);
+    doc.text("TOTAL: " + (q.total || 0).toFixed(2) + " €", 140, finalY);
 
-    // Renderizar PDF
     const pdfDataUri = doc.output('datauristring');
     document.getElementById('pdf-frame').src = pdfDataUri;
     
