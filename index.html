@@ -7,8 +7,6 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -29,11 +27,32 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.3s; }
         .active-tab { color: #0f172a; border-top: 3px solid #0f172a; background: #f1f5f9; }
         .dark .active-tab { color: #f8fafc; border-top: 3px solid #38bdf8; background: #1e293b; }
-        .fade-in { animation: fadeIn 0.2s ease-out; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; }
-        .dark .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
-        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+            color: transparent !important;
+        }
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-left: -0.625rem;
+            margin-top: -0.625rem;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .toast-container { position: fixed; bottom: 1rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
+        .toast { background-color: #1e293b; color: white; padding: 0.75rem 1.25rem; border-radius: 0.75rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,.2), 0 4px 6px -4px rgba(0,0,0,.2); transform: translateY(2rem); opacity: 0; animation: toast-in 0.3s forwards; }
+        .toast.error { background-color: #dc2626; }
+        @keyframes toast-in { to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body class="min-h-screen pb-24 text-slate-800 bg-slate-50 dark:bg-darkBg dark:text-slate-100">
@@ -55,7 +74,7 @@
         <p id="auth-error-msg" class="text-red-500 text-xs mt-4 font-bold hidden"></p>
 
         <div class="flex flex-col gap-3 mt-6">
-            <button onclick="window.processAuth()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 flex items-center justify-center gap-2">
+            <button id="auth-btn" onclick="window.processAuth()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 flex items-center justify-center gap-2">
                 <span>Entrar al Panel</span>
             </button>
         </div>
@@ -82,7 +101,7 @@
     <div id="search-bar" class="mb-6 flex gap-2">
         <div class="relative flex-1">
             <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input id="main-search" oninput="window.applyFilters()" type="text" placeholder="Buscar..." class="w-full pl-11 pr-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none focus:ring-2 ring-blue-500">
+            <input id="main-search" oninput="window.applyFilters()" type="text" placeholder="Buscar en los elementos cargados..." class="w-full pl-11 pr-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none focus:ring-2 ring-blue-500">
         </div>
         <select id="status-filter" onchange="window.applyFilters()" class="px-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none text-sm font-bold">
             <option value="todos">Todos</option>
@@ -93,7 +112,7 @@
     </div>
 
     <!-- VISTAS -->
-    <section id="view-quotes" class="space-y-6 fade-in">
+    <section id="view-quotes" class="space-y-4 fade-in">
         <div class="flex justify-between items-center">
             <h2 class="text-2xl font-extrabold">Proyectos</h2>
             <div class="flex gap-2">
@@ -101,25 +120,26 @@
                 <button onclick="window.openQuoteModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"><i data-lucide="plus"></i> Nuevo</button>
             </div>
         </div>
-        <div id="quotes-list" class="grid gap-4">
-            <div class="h-24 rounded-2xl skeleton"></div>
-        </div>
+        <div id="quotes-list" class="grid gap-4"></div>
+        <div id="quotes-loader" class="text-center"></div>
     </section>
 
-    <section id="view-materials" class="hidden space-y-6 fade-in">
+    <section id="view-materials" class="hidden space-y-4 fade-in">
         <div class="flex justify-between items-center">
             <h2 class="text-2xl font-extrabold">Catálogo de Conceptos</h2>
             <button onclick="window.openMaterialModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"><i data-lucide="plus"></i> Añadir</button>
         </div>
         <div id="materials-list" class="grid sm:grid-cols-2 gap-4"></div>
+        <div id="materials-loader" class="text-center"></div>
     </section>
 
-    <section id="view-clients" class="hidden space-y-6 fade-in">
+    <section id="view-clients" class="hidden space-y-4 fade-in">
         <div class="flex justify-between items-center">
             <h2 class="text-2xl font-extrabold">Clientes</h2>
             <button onclick="window.openClientModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"><i data-lucide="user-plus"></i> Nuevo</button>
         </div>
         <div id="clients-list" class="grid sm:grid-cols-2 gap-4"></div>
+        <div id="clients-loader" class="text-center"></div>
     </section>
 </main>
 
@@ -147,7 +167,7 @@
         <input id="cl-nif" placeholder="NIF / CIF" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
         <input id="cl-address" placeholder="Dirección" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
         <input id="cl-city" placeholder="Ciudad / Municipio" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <button onclick="window.saveClientData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl">Guardar</button>
+        <button id="cl-save-btn" onclick="window.saveClientData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl">Guardar</button>
         <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm">Cerrar</button>
     </div>
 </div>
@@ -167,7 +187,7 @@
                 <input id="mt-cost" type="number" step="0.01" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
             </div>
         </div>
-        <button onclick="window.saveMaterialData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl">Guardar</button>
+        <button id="mt-save-btn" onclick="window.saveMaterialData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl">Guardar</button>
         <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm">Cerrar</button>
     </div>
 </div>
@@ -207,7 +227,6 @@
                         <input id="q-mt-qty" type="number" value="1" class="w-16 p-3 border dark:border-slate-700 dark:bg-slate-800 rounded-xl text-center">
                         <button onclick="window.addItemToQuote()" class="bg-slate-900 dark:bg-blue-600 text-white px-4 rounded-xl shadow-md"><i data-lucide="plus"></i></button>
                     </div>
-                    <!-- Selector de Plantillas -->
                     <div id="template-quick-add" class="flex gap-2 items-center">
                         <select id="q-tp-select" class="flex-1 p-2 bg-white dark:bg-slate-800 border rounded-lg text-xs font-bold text-slate-500"></select>
                         <button onclick="window.addTemplateItemsToQuote()" class="text-xs font-bold bg-slate-200 dark:bg-slate-700 px-3 py-2 rounded-lg">Cargar Pack</button>
@@ -221,7 +240,6 @@
                         <span>SUBTOTAL</span>
                         <span id="q-subtotal-val">0.00 €</span>
                     </div>
-                    <!-- IVA Condicional en UI -->
                     <div id="q-iva-row" class="flex justify-between text-xs font-bold text-slate-400">
                         <span>IVA</span>
                         <span id="q-iva-val">0.00 €</span>
@@ -230,7 +248,6 @@
                         <span>TOTAL</span>
                         <span id="q-total-val">0.00 €</span>
                     </div>
-                    <!-- Beneficio Neto -->
                     <div class="flex justify-between text-xs font-bold text-emerald-500 mt-2">
                         <span>BENEFICIO ESTIMADO</span>
                         <span id="q-profit-val">0.00 €</span>
@@ -239,7 +256,7 @@
             </div>
         </div>
         <div class="p-6 border-t dark:border-slate-700">
-            <button onclick="window.saveFinalQuote()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl text-lg uppercase tracking-wider">Guardar Presupuesto</button>
+            <button id="q-save-btn" onclick="window.saveFinalQuote()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl text-lg uppercase tracking-wider">Guardar Presupuesto</button>
         </div>
     </div>
 </div>
@@ -252,7 +269,7 @@
             <input id="tp-name" placeholder="Nombre (ej: Instalación Vivienda)" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
             <p class="text-[10px] text-slate-400">Guarda los materiales del presupuesto actual como una plantilla.</p>
         </div>
-        <button onclick="window.saveCurrentAsTemplate()" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl">Crear desde Selección Actual</button>
+        <button id="tp-save-btn" onclick="window.saveCurrentAsTemplate()" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl">Crear desde Selección Actual</button>
         <div id="templates-list-ui" class="space-y-2 pt-4 border-t dark:border-slate-700 max-h-40 overflow-y-auto"></div>
         <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm">Cerrar</button>
     </div>
@@ -280,10 +297,12 @@
     </div>
 </div>
 
+<div id="toast-container" class="toast-container"></div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp, getDocs, query, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBuX9O3WBR5zX_L-WYdRiwirBl50aUFzlg",
@@ -303,10 +322,50 @@ const db = getFirestore(app);
 setPersistence(auth, browserLocalPersistence).catch(console.error);
 
 let user = null;
+const PAGE_SIZE = 10;
 window.data = { clients: [], materials: [], quotes: [], templates: [] };
+window.lastDoc = { clients: null, materials: null, quotes: null };
 window.tempItems = [];
 window.editingId = null;
-window.dbListeners = [];
+
+// --- UI & Utility Functions ---
+
+const loadScript = (url) => {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${url}"]`)) {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+};
+
+window.showToast = (message, type = 'success') => {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+};
+
+const toggleButtonLoading = (btnId, isLoading) => {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    if (isLoading) {
+        btn.classList.add('btn-loading');
+        btn.disabled = true;
+    } else {
+        btn.classList.remove('btn-loading');
+        btn.disabled = false;
+    }
+};
 
 window.toggleDarkMode = () => {
     document.documentElement.classList.toggle('dark');
@@ -321,9 +380,9 @@ if (localStorage.getItem('theme') === 'dark') {
 }
 
 window.applyFilters = () => {
-    renderCls();
-    renderMats();
-    renderQts();
+    renderData(window.data.clients, 'clients', { append: false });
+    renderData(window.data.materials, 'materials', { append: false });
+    renderData(window.data.quotes, 'quotes', { append: false });
 };
 
 window.processAuth = async () => {
@@ -334,18 +393,20 @@ window.processAuth = async () => {
     if (!email || !pass) { errEl.innerText = "Email y contraseña requeridos"; errEl.classList.remove('hidden'); return; }
     errEl.classList.add('hidden');
 
+    toggleButtonLoading('auth-btn', true);
     try {
         await signInWithEmailAndPassword(auth, email, pass);
     } catch (e) {
         errEl.innerText = "Credenciales incorrectas";
         errEl.classList.remove('hidden');
+    } finally {
+        toggleButtonLoading('auth-btn', false);
     }
 };
 
 window.doLogout = async () => { 
     await signOut(auth); 
-    document.getElementById('usr-fld').value = '';
-    document.getElementById('key-fld').value = '';
+    window.location.reload();
 };
 
 window.switchView = (v) => {
@@ -364,14 +425,126 @@ window.closeAllModals = () => {
     window.editingId = null;
 };
 
-const syncCol = (name, cb) => {
-    if(!user) return () => {}; 
-    const path = collection(db, 'artifacts', appId, 'users', user.uid, name);
-    return onSnapshot(path, s => {
-        window.data[name] = s.docs.map(d => ({id: d.id, ...d.data()}));
-        cb();
-    }, (err) => console.error(`Error Sync ${name}:`, err));
+// --- Data Fetching & Rendering ---
+
+const fetchMore = async (colName, append = false) => {
+    if (!user) return;
+    const loader = document.getElementById(`${colName}-loader`);
+    loader.innerHTML = '<div class="h-12 rounded-lg skeleton-loading w-32 mx-auto"></div>';
+
+    try {
+        const colRef = collection(db, 'artifacts', appId, 'users', user.uid, colName);
+        let q;
+
+        const commonQueries = [orderBy('up', 'desc'), limit(PAGE_SIZE)];
+        
+        if (append && window.lastDoc[colName]) {
+            q = query(colRef, ...commonQueries, startAfter(window.lastDoc[colName]));
+        } else {
+            q = query(colRef, ...commonQueries);
+            window.data[colName] = []; // Reset on new fetch
+        }
+
+        const snapshot = await getDocs(q);
+        const newDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        if (newDocs.length > 0) {
+            window.lastDoc[colName] = snapshot.docs[snapshot.docs.length - 1];
+            window.data[colName].push(...newDocs);
+        }
+
+        renderData(window.data[colName], colName, { append: false, moreAvailable: newDocs.length === PAGE_SIZE });
+
+    } catch (err) {
+        console.error(`Error fetching ${colName}:`, err);
+        showToast(`Error cargando ${colName}`, 'error');
+        loader.innerHTML = '';
+    }
 };
+
+const renderData = (items, colName, options) => {
+    const { append, moreAvailable } = options;
+    const listEl = document.getElementById(`${colName}-list`);
+    const loaderEl = document.getElementById(`${colName}-loader`);
+    
+    // Apply filters
+    const search = document.getElementById('main-search').value.toLowerCase();
+    const statusFilter = colName === 'quotes' ? document.getElementById('status-filter').value : 'todos';
+
+    const filteredItems = items.filter(item => {
+        let matchesSearch = true;
+        let matchesStatus = true;
+
+        if (search) {
+            const name = item.name || item.ref || '';
+            matchesSearch = name.toLowerCase().includes(search);
+        }
+        if (colName === 'quotes' && statusFilter !== 'todos') {
+            matchesStatus = item.status === statusFilter;
+        }
+        return matchesSearch && matchesStatus;
+    });
+
+    let html = '';
+    switch (colName) {
+        case 'clients':
+            html = filteredItems.map(c => `
+                <div onclick="window.openClientModal('${c.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
+                    <div><b class="block uppercase">${c.name}</b><div class="flex gap-2 text-[10px] text-slate-400"><span>${c.phone}</span><span>•</span><span>${c.nif || 'Sin NIF'}</span></div></div>
+                    <button onclick="window.delItem('clients','${c.id}',event)" class="text-slate-300 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>`).join('');
+            break;
+        case 'materials':
+            html = filteredItems.map(m => `
+                <div onclick="window.openMaterialModal('${m.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
+                    <div><b class="block">${m.name}</b><div class="flex gap-2 text-[10px] text-slate-400 mt-1"><span>Venta: ${m.price.toFixed(2)}€</span><span>•</span><span>Costo: ${(m.cost || 0).toFixed(2)}€</span></div></div>
+                    <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>`).join('');
+            break;
+        case 'quotes':
+            html = filteredItems.map(q => {
+                const client = window.data.clients.find(c => c.id === q.clientId) || {name: 'Cliente Eliminado'};
+                const colors = { pendiente: 'text-amber-500 bg-amber-50', aprobado: 'text-emerald-500 bg-emerald-50', rechazado: 'text-red-500 bg-red-50' };
+                const darkColors = { pendiente: 'dark:bg-amber-500/10', aprobado: 'dark:bg-emerald-500/10', rechazado: 'dark:bg-red-500/10' };
+                return `
+                <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400" onclick="window.openQuoteModal('${q.id}')">
+                    <div class="flex justify-between items-start">
+                        <div><span class="text-xs font-black text-slate-400 tracking-wider">REF: ${q.ref}</span><h4 class="font-bold text-lg leading-tight uppercase">${client.name}</h4></div>
+                        <span class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${colors[q.status || 'pendiente']} ${darkColors[q.status || 'pendiente']}">${q.status || 'Pendiente'}</span>
+                    </div>
+                    <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
+                        <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
+                        <div class="flex gap-2"><button onclick="window.generatePDFWrapper('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button><button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
+                    </div>
+                </div>`;
+            }).join('');
+            break;
+    }
+    
+    if (append) listEl.innerHTML += html;
+    else listEl.innerHTML = html;
+
+    if (filteredItems.length === 0 && !search) {
+        const iconMap = { quotes: 'file-text', materials: 'package', clients: 'users' };
+        const textMap = { quotes: 'proyectos', materials: 'conceptos', clients: 'clientes' };
+        listEl.innerHTML = `
+            <div class="text-center col-span-full p-8 bg-slate-100 dark:bg-slate-800/50 rounded-2xl">
+                <i data-lucide="${iconMap[colName]}" class="w-12 h-12 mx-auto text-slate-400 mb-4"></i>
+                <h3 class="font-bold text-lg">No hay ${textMap[colName]}</h3>
+                <p class="text-sm text-slate-500">¡Crea uno para empezar!</p>
+            </div>`;
+    }
+
+    if (moreAvailable) {
+        loaderEl.innerHTML = `<button onclick="fetchMore('${colName}', true)" class="my-4 bg-slate-200 dark:bg-slate-700 px-6 py-3 rounded-xl font-bold text-sm">Cargar más</button>`;
+    } else {
+        loaderEl.innerHTML = '';
+    }
+
+    lucide.createIcons();
+};
+
+// --- CRUD Functions ---
 
 window.openClientModal = (id = null) => {
     window.editingId = id;
@@ -386,6 +559,8 @@ window.openClientModal = (id = null) => {
 };
 
 window.saveClientData = async () => {
+    const btnId = 'cl-save-btn';
+    toggleButtonLoading(btnId, true);
     const d = { 
         name: document.getElementById('cl-name').value.trim(), 
         phone: document.getElementById('cl-phone').value.trim(), 
@@ -394,11 +569,22 @@ window.saveClientData = async () => {
         city: document.getElementById('cl-city').value.trim(),
         up: serverTimestamp() 
     };
-    if(!d.name) return;
+    if(!d.name) {
+        showToast('El nombre es obligatorio', 'error');
+        toggleButtonLoading(btnId, false);
+        return;
+    }
     const c = collection(db, 'artifacts', appId, 'users', user.uid, 'clients');
-    if(window.editingId) await updateDoc(doc(c, window.editingId), d);
-    else await addDoc(c, d);
-    window.closeAllModals();
+    try {
+        if(window.editingId) await updateDoc(doc(c, window.editingId), d);
+        else await addDoc(c, d);
+        showToast('Cliente guardado');
+        fetchMore('clients'); // Refresh
+    } catch(e) { showToast('Error al guardar', 'error'); console.error(e); }
+    finally {
+        toggleButtonLoading(btnId, false);
+        window.closeAllModals();
+    }
 };
 
 window.openMaterialModal = (id = null) => {
@@ -412,10 +598,12 @@ window.openMaterialModal = (id = null) => {
 };
 
 window.saveMaterialData = async () => {
+    const btnId = 'mt-save-btn';
+    toggleButtonLoading(btnId, true);
     const price = parseFloat(document.getElementById('mt-price').value) || 0;
     const cost = parseFloat(document.getElementById('mt-cost').value) || 0; 
     
-    if(price < 0 || cost < 0) { alert("Los precios no pueden ser negativos"); return; }
+    if(price < 0 || cost < 0) { showToast("Los precios no pueden ser negativos", 'error'); toggleButtonLoading(btnId, false); return; }
     
     const d = { 
         name: document.getElementById('mt-name').value.trim(), 
@@ -423,20 +611,34 @@ window.saveMaterialData = async () => {
         cost: cost,
         up: serverTimestamp() 
     };
-    if(!d.name) return;
+    if(!d.name) { showToast('El nombre es obligatorio', 'error'); toggleButtonLoading(btnId, false); return; }
+
     const c = collection(db, 'artifacts', appId, 'users', user.uid, 'materials');
-    if(window.editingId) await updateDoc(doc(c, window.editingId), d);
-    else await addDoc(c, d);
-    window.closeAllModals();
+    try {
+        if(window.editingId) await updateDoc(doc(c, window.editingId), d);
+        else await addDoc(c, d);
+        showToast('Concepto guardado');
+        fetchMore('materials'); // Refresh
+    } catch(e) { showToast('Error al guardar', 'error'); console.error(e); }
+    finally {
+        toggleButtonLoading(btnId, false);
+        window.closeAllModals();
+    }
 };
 
 window.openQuoteModal = (id = null) => {
-    if(window.data.clients.length === 0) { alert("Primero crea un cliente."); return; }
+    if(window.data.clients.length === 0) { showToast("Primero crea un cliente.", 'error'); return; }
     window.editingId = id;
     document.getElementById('q-cl-select').innerHTML = window.data.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     document.getElementById('q-mt-select').innerHTML = window.data.materials.map(m => `<option value="${m.id}">${m.name} (${m.price.toFixed(2)}€)</option>`).join('');
-    document.getElementById('q-tp-select').innerHTML = '<option value="">Cargar Pack...</option>' + window.data.templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     
+    // Lazy load templates
+    const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
+    getDocs(query(c)).then(s => {
+        window.data.templates = s.docs.map(d => ({id: d.id, ...d.data()}));
+        document.getElementById('q-tp-select').innerHTML = '<option value="">Cargar Pack...</option>' + window.data.templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    });
+
     if(id) {
         const q = window.data.quotes.find(x => x.id === id);
         document.getElementById('q-ref').value = q.ref;
@@ -453,6 +655,52 @@ window.openQuoteModal = (id = null) => {
     document.getElementById('modal-quote').classList.replace('hidden', 'flex');
 };
 
+window.saveFinalQuote = async () => {
+    const btnId = 'q-save-btn';
+    toggleButtonLoading(btnId, true);
+    const ref = document.getElementById('q-ref').value;
+    const cid = document.getElementById('q-cl-select').value;
+    const status = document.getElementById('q-status').value;
+    const iva = document.getElementById('q-iva').value;
+    if(!ref || window.tempItems.length === 0) {
+        showToast('La referencia y los conceptos son obligatorios', 'error');
+        toggleButtonLoading(btnId, false);
+        return;
+    }
+    
+    const subtotal = window.tempItems.reduce((a,b)=>a+b.sub,0);
+    const total = subtotal * (1 + (parseInt(iva)/100));
+    const colRef = collection(db, 'artifacts', appId, 'users', user.uid, 'quotes');
+    
+    const docData = { ref, clientId: cid, status, iva, items: window.tempItems, subtotal, total, up: serverTimestamp() };
+    try {
+        if (window.editingId) await updateDoc(doc(colRef, window.editingId), docData);
+        else await addDoc(colRef, docData);
+        showToast('Presupuesto guardado');
+        fetchMore('quotes');
+    } catch (e) { showToast('Error al guardar', 'error'); console.error(e); }
+    finally {
+        toggleButtonLoading(btnId, false);
+        window.closeAllModals();
+    }
+};
+
+window.delItem = async (col, id, e) => {
+    if(e) e.stopPropagation();
+    if(confirm("¿Seguro que quieres eliminar este elemento?")) {
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
+            showToast("Elemento eliminado");
+            fetchMore(col);
+        } catch (err) {
+            console.error("Error eliminando:", err);
+            showToast(`Error al eliminar: ${err.message}`, 'error');
+        }
+    }
+};
+
+
+// --- Quote Item Management ---
 window.addItemToQuote = () => {
     const mid = document.getElementById('q-mt-select').value;
     const qty = parseFloat(document.getElementById('q-mt-qty').value) || 1;
@@ -473,10 +721,7 @@ window.renderQuoteList = () => {
         totalCost += (it.totalCost || 0); 
         return `<li class="flex justify-between p-2 bg-white dark:bg-slate-700 rounded border dark:border-slate-600 text-sm">
             <span>${it.qty} x ${it.name}</span>
-            <div class="flex gap-2 items-center">
-                <b>${it.sub.toFixed(2)}€</b>
-                <button onclick="window.removeTempItem(${i})" class="text-red-400"><i data-lucide="minus-circle" class="w-4 h-4"></i></button>
-            </div>
+            <div class="flex gap-2 items-center"><b>${it.sub.toFixed(2)}€</b><button onclick="window.removeTempItem(${i})" class="text-red-400"><i data-lucide="minus-circle" class="w-4 h-4"></i></button></div>
         </li>`;
     }).join('');
     
@@ -486,7 +731,6 @@ window.renderQuoteList = () => {
 
     document.getElementById('q-subtotal-val').innerText = subtotal.toFixed(2) + " €";
     
-    // IVA Condicional
     const ivaRow = document.getElementById('q-iva-row');
     if(ivaPerc > 0) {
         ivaRow.classList.remove('hidden');
@@ -506,26 +750,42 @@ window.removeTempItem = (index) => {
     window.renderQuoteList();
 };
 
+// --- Template Management ---
 window.openTemplateModal = () => {
     const listUi = document.getElementById('templates-list-ui');
-    listUi.innerHTML = window.data.templates.map(t => `
-        <div class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded border dark:border-slate-700 text-xs font-bold">
-            <span>${t.name}</span>
-            <button onclick="window.delItem('templates','${t.id}',event)" class="text-red-400"><i data-lucide="trash" class="w-3 h-3"></i></button>
-        </div>
-    `).join('');
-    lucide.createIcons();
+    listUi.innerHTML = '';
+    const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
+    getDocs(query(c)).then(s => {
+        window.data.templates = s.docs.map(d => ({id: d.id, ...d.data()}));
+        listUi.innerHTML = window.data.templates.map(t => `
+            <div class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded border dark:border-slate-700 text-xs font-bold">
+                <span>${t.name}</span>
+                <button onclick="window.delItem('templates','${t.id}',event); window.openTemplateModal();" class="text-red-400"><i data-lucide="trash" class="w-3 h-3"></i></button>
+            </div>`).join('');
+        lucide.createIcons();
+    });
     document.getElementById('modal-template').classList.replace('hidden', 'flex');
 };
 
 window.saveCurrentAsTemplate = async () => {
+    const btnId = 'tp-save-btn';
+    toggleButtonLoading(btnId, true);
     const name = document.getElementById('tp-name').value.trim();
-    if(!name || window.tempItems.length === 0) { alert("Añade materiales a la lista del presupuesto y dales un nombre"); return; }
+    if(!name || window.tempItems.length === 0) { 
+        showToast("Se necesita un nombre y al menos un concepto", 'error'); 
+        toggleButtonLoading(btnId, false);
+        return; 
+    }
     const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
-    await addDoc(c, { name, items: window.tempItems });
-    document.getElementById('tp-name').value = "";
-    alert("Plantilla guardada");
-    window.openTemplateModal();
+    try {
+        await addDoc(c, { name, items: window.tempItems, up: serverTimestamp() });
+        document.getElementById('tp-name').value = "";
+        showToast("Plantilla guardada");
+        window.openTemplateModal(); // Refresh list
+    } catch(e) { showToast('Error al guardar plantilla', 'error'); console.error(e); }
+    finally {
+        toggleButtonLoading(btnId, false);
+    }
 };
 
 window.addTemplateItemsToQuote = () => {
@@ -535,151 +795,50 @@ window.addTemplateItemsToQuote = () => {
     if(template) {
         window.tempItems = [...window.tempItems, ...template.items];
         window.renderQuoteList();
+        showToast(`Pack '${template.name}' cargado`);
     }
 };
 
-window.saveFinalQuote = async () => {
-    const ref = document.getElementById('q-ref').value;
-    const cid = document.getElementById('q-cl-select').value;
-    const status = document.getElementById('q-status').value;
-    const iva = document.getElementById('q-iva').value;
-    if(!ref || window.tempItems.length === 0) return;
-    
-    const subtotal = window.tempItems.reduce((a,b)=>a+b.sub,0);
-    const total = subtotal * (1 + (parseInt(iva)/100));
-    const colRef = collection(db, 'artifacts', appId, 'users', user.uid, 'quotes');
-    
-    const docData = { ref, clientId: cid, status, iva, items: window.tempItems, subtotal, total, date: serverTimestamp() };
-    if (window.editingId) await updateDoc(doc(colRef, window.editingId), docData);
-    else await addDoc(colRef, docData);
-    window.closeAllModals();
-};
+// --- PDF Generation (Lazy Loaded) ---
+window.generatePDFWrapper = async (id, event) => {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    btn.classList.add('btn-loading');
 
-window.delItem = async (col, id, e) => {
-    if(e) e.stopPropagation();
-    if(confirm("¿Seguro que quieres eliminar?")) {
-        try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
-        } catch (err) {
-            console.error("Error eliminando:", err);
-            alert(`No se pudo eliminar. Es posible que sea un problema de permisos en Firebase. Error: ${err.message}`);
-        }
+    try {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js');
+        generatePDF(id); // Call the actual generator
+    } catch (error) {
+        console.error("Failed to load PDF scripts", error);
+        showToast("Error al cargar librerías PDF", "error");
+    } finally {
+        btn.classList.remove('btn-loading');
     }
 };
 
-const renderCls = () => {
-    const search = document.getElementById('main-search').value.toLowerCase();
-    const filtered = window.data.clients.filter(c => c.name.toLowerCase().includes(search));
-    
-    document.getElementById('clients-list').innerHTML = filtered.map(c => `
-        <div onclick="window.openClientModal('${c.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
-            <div>
-                <b class="block uppercase">${c.name}</b>
-                <div class="flex gap-2 text-[10px] text-slate-400">
-                    <span>${c.phone}</span>
-                    <span>•</span>
-                    <span>${c.nif || 'Sin NIF'}</span>
-                </div>
-            </div>
-            <button onclick="window.delItem('clients','${c.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-    `).join('');
-    lucide.createIcons();
-};
-
-const renderMats = () => {
-    const search = document.getElementById('main-search').value.toLowerCase();
-    const filtered = window.data.materials.filter(m => m.name.toLowerCase().includes(search));
-    
-    document.getElementById('materials-list').innerHTML = filtered.map(m => `
-        <div onclick="window.openMaterialModal('${m.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
-            <div>
-                <b class="block">${m.name}</b>
-                <div class="flex gap-2 text-[10px] text-slate-400 mt-1">
-                    <span>Venta: ${m.price.toFixed(2)}€</span>
-                    <span>•</span>
-                    <span>Costo: ${(m.cost || 0).toFixed(2)}€</span>
-                </div>
-            </div>
-            <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-    `).join('');
-    lucide.createIcons();
-};
-
-const renderQts = () => {
-    const search = document.getElementById('main-search').value.toLowerCase();
-    const statusFilter = document.getElementById('status-filter').value;
-    
-    let filtered = window.data.quotes.filter(q => q.ref.toLowerCase().includes(search));
-    if(statusFilter !== 'todos') filtered = filtered.filter(q => q.status === statusFilter);
-
-    const list = document.getElementById('quotes-list');
-    if(filtered.length === 0) { list.innerHTML = `<div class="p-8 text-center text-slate-400 font-bold">No hay proyectos</div>`; return; }
-
-    list.innerHTML = filtered.map(q => {
-        const client = window.data.clients.find(c => c.id === q.clientId) || {name: 'Cliente Eliminado'};
-        const colors = { pendiente: 'text-amber-500 bg-amber-50', aprobado: 'text-emerald-500 bg-emerald-50', rechazado: 'text-red-500 bg-red-50' };
-        const darkColors = { pendiente: 'dark:bg-amber-500/10', aprobado: 'dark:bg-emerald-500/10', rechazado: 'dark:bg-red-500/10' };
-        
-        return `
-        <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400" onclick="window.openQuoteModal('${q.id}')">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="text-xs font-black text-slate-400 tracking-wider">REF: ${q.ref}</span>
-                    <h4 class="font-bold text-lg leading-tight uppercase">${client.name}</h4>
-                </div>
-                <span class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${colors[q.status || 'pendiente']} ${darkColors[q.status || 'pendiente']}">${q.status || 'Pendiente'}</span>
-            </div>
-            <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
-                <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
-                <div class="flex gap-2">
-                    <button onclick="window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
-                    <button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                </div>
-            </div>
-        </div>
-        `;
-    }).join('');
-    lucide.createIcons();
-};
-
-window.generatePDF = (id, event) => {
-    if(event) event.stopPropagation();
+const generatePDF = (id) => {
     const q = window.data.quotes.find(x => x.id === id);
-    if (!q) {
-        alert("No se encontró el presupuesto.");
-        return;
-    }
+    if (!q) { showToast("Presupuesto no encontrado.", 'error'); return; }
     const client = window.data.clients.find(c => c.id === q.clientId) || {};
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4'); // Using points for more precision
+    const doc = new jsPDF('p', 'pt', 'a4');
 
     const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 40; // pt
-
-    // --- Fonts and Colors ---
-    const mainTextColor = '#333333'; // Dark grey
-    const lightTextColor = '#777777'; // Lighter grey
-    const accentColor = '#4A90E2'; // A nice blue
+    const margin = 40;
+    const mainTextColor = '#333333';
+    const lightTextColor = '#777777';
+    const accentColor = '#4A90E2';
 
     doc.setFont('helvetica');
     doc.setTextColor(mainTextColor);
-    
-    // --- Quote Title ---
     doc.setFontSize(26);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(accentColor);
     doc.text("PRESUPUESTO", pageWidth - margin, 60, { align: 'right' });
 
-
-    // --- Client and Quote Info Boxes ---
     const infoBoxY = 130;
-    const infoBoxWidth = (pageWidth - margin * 2 - 20) / 2;
-    doc.setDrawColor(lightTextColor);
-
-    // Client Box
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(lightTextColor);
@@ -690,20 +849,10 @@ window.generatePDF = (id, event) => {
     doc.setTextColor(mainTextColor);
     doc.text(client.name || 'Sin Nombre', margin, infoBoxY + 15);
     let clientAddressY = infoBoxY + 15;
-    if (client.address) {
-        clientAddressY += 15;
-        doc.text(client.address, margin, clientAddressY);
-    }
-    if (client.city) {
-        clientAddressY += 15;
-        doc.text(client.city, margin, clientAddressY);
-    }
-     if (client.nif) {
-        clientAddressY += 15;
-        doc.text("NIF/CIF: " + client.nif, margin, clientAddressY);
-    }
+    if (client.address) { clientAddressY += 15; doc.text(client.address, margin, clientAddressY); }
+    if (client.city) { clientAddressY += 15; doc.text(client.city, margin, clientAddressY); }
+    if (client.nif) { clientAddressY += 15; doc.text("NIF/CIF: " + client.nif, margin, clientAddressY); }
 
-    // Quote Details Box
     const rightInfoBoxX = pageWidth / 2 + 10;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
@@ -716,74 +865,47 @@ window.generatePDF = (id, event) => {
     doc.setTextColor(mainTextColor);
     doc.text(q.ref.toUpperCase(), rightInfoBoxX, infoBoxY + 15);
 
-    let dateStr = "N/A";
-    if (q.date && q.date.toDate) {
-        dateStr = q.date.toDate().toLocaleDateString('es-ES');
-    } else if (q.date) {
-        dateStr = new Date(q.date).toLocaleDateString('es-ES');
-    }
+    let dateStr = q.up?.toDate ? q.up.toDate().toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES');
     doc.text(dateStr, rightInfoBoxX, infoBoxY + 45);
 
-
-    // --- Table ---
-    const tableTopY = clientAddressY + 40;
-    
     const tableData = q.items.map(it => [
-        { content: it.name },
-        { content: it.qty.toString() },
-        { content: it.price.toFixed(2) + " €" },
-        { content: it.sub.toFixed(2) + " €" }
+        { content: it.name }, { content: it.qty.toString() },
+        { content: it.price.toFixed(2) + " €" }, { content: it.sub.toFixed(2) + " €" }
     ]);
 
     doc.autoTable({
-        startY: tableTopY,
+        startY: clientAddressY + 40,
         head: [['Concepto', 'Cant.', 'Precio Unitario', 'Total']],
         body: tableData,
         theme: 'grid',
-        styles: {
-            font: 'helvetica',
-            fontSize: 9,
-            cellPadding: 4,
-            overflow: 'linebreak'
-        },
-        headStyles: {
-            fillColor: '#F4F4F4', // Light grey header
-            textColor: mainTextColor,
-            fontStyle: 'bold',
-            halign: 'left'
-        },
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+        headStyles: { fillColor: '#F4F4F4', textColor: mainTextColor, fontStyle: 'bold', halign: 'left' },
         columnStyles: {
-            0: { halign: 'left', cellWidth: 'auto' },
             1: { halign: 'center', cellWidth: 50 },
             2: { halign: 'right', cellWidth: 80 },
             3: { halign: 'right', cellWidth: 80 },
         },
         didDrawPage: (data) => {
-            // Footer for each page
             doc.setFontSize(8);
             doc.setTextColor(lightTextColor);
-            const pageCount = doc.internal.getNumberOfPages();
-            doc.text("Página " + data.pageNumber + " de " + pageCount, pageWidth / 2, doc.internal.pageSize.height - 20, { align: 'center' });
+            doc.text("Página " + data.pageNumber + " de " + doc.internal.getNumberOfPages(), pageWidth / 2, doc.internal.pageSize.height - 20, { align: 'center' });
         }
     });
 
-    // --- Totals ---
     let finalY = doc.lastAutoTable.finalY + 20;
     const totalsX = pageWidth - margin - 150;
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(mainTextColor);
-    
     doc.text("Subtotal:", totalsX, finalY);
     doc.text((q.subtotal || 0).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
 
     const ivaPerc = parseInt(q.iva || 0);
     if (ivaPerc > 0) {
         finalY += 20;
-        const ivaVal = (q.subtotal * (ivaPerc / 100));
         doc.text(`IVA (${ivaPerc}%):`, totalsX, finalY);
-        doc.text(ivaVal.toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
+        doc.text((q.subtotal * (ivaPerc / 100)).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
     }
 
     finalY += 25;
@@ -798,10 +920,8 @@ window.generatePDF = (id, event) => {
     doc.text("TOTAL:", totalsX, finalY);
     doc.text((q.total || 0).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
 
-    // --- Finalize & Display ---
     const pdfDataUri = doc.output('datauristring');
     document.getElementById('pdf-frame').src = pdfDataUri;
-    
     document.getElementById('btn-dl-pdf').onclick = () => doc.save(`Presupuesto_${q.ref}.pdf`);
     document.getElementById('btn-open-pdf').onclick = () => {
         const pdfWindow = window.open();
@@ -819,24 +939,23 @@ window.generatePDF = (id, event) => {
     document.getElementById('modal-pdf').classList.replace('hidden', 'flex');
 };
 
+
+// --- Auth State ---
+
 onAuthStateChanged(auth, (u) => {
     if (u) {
         user = u;
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('status-dot').classList.replace('bg-slate-300', 'bg-emerald-500');
         
-        window.dbListeners.forEach(unsub => unsub());
-        window.dbListeners = [];
-        
-        window.dbListeners.push(syncCol('clients', renderCls));
-        window.dbListeners.push(syncCol('materials', renderMats));
-        window.dbListeners.push(syncCol('templates', () => {}));
-        window.dbListeners.push(syncCol('quotes', renderQts));
+        fetchMore('clients');
+        fetchMore('materials');
+        fetchMore('quotes');
+
     } else {
         user = null;
         document.getElementById('auth-screen').classList.remove('hidden');
         document.getElementById('status-dot').classList.replace('bg-emerald-500', 'bg-slate-300');
-        window.dbListeners.forEach(unsub => unsub());
     }
 });
 </script>
