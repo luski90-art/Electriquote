@@ -562,6 +562,7 @@ window.delItem = async (col, id, e) => {
             await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
         } catch (err) {
             console.error("Error eliminando:", err);
+            alert(`No se pudo eliminar. Es posible que sea un problema de permisos en Firebase. Error: ${err.message}`);
         }
     }
 };
@@ -633,8 +634,8 @@ const renderQts = () => {
             <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
                 <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
                 <div class="flex gap-2">
-                    <button onclick="event.stopPropagation(); window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
-                    <button onclick="event.stopPropagation(); window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <button onclick="window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
+                    <button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </div>
         </div>
@@ -646,71 +647,163 @@ const renderQts = () => {
 window.generatePDF = (id, event) => {
     if(event) event.stopPropagation();
     const q = window.data.quotes.find(x => x.id === id);
+    if (!q) {
+        alert("No se encontró el presupuesto.");
+        return;
+    }
     const client = window.data.clients.find(c => c.id === q.clientId) || {};
-    
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("PRESUPUESTO", 14, 20);
-    
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(q.ref.toUpperCase(), 14, 30); 
-    
-    doc.setFont("helvetica", "normal");
-    let dateStr = "Fecha no disponible";
-    if(q.date) {
-        const d = q.date.toDate ? q.date.toDate() : new Date(q.date);
-        dateStr = d.toLocaleDateString('es-ES');
-    }
-    doc.text(dateStr, 14, 36); 
 
+    const pageHeight = doc.internal.pageSize.height;
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 14;
+
+    // --- Colores y Fuentes ---
+    const primaryColor = [59, 130, 246]; // Blue-500
+    const textColor = [51, 65, 85]; // Slate-700
+    const lightTextColor = [100, 116, 139]; // Slate-500
+    const headingColor = [15, 23, 42]; // Slate-900
+
+    doc.setFont("helvetica");
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+
+    // --- Cabecera ---
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(headingColor[0], headingColor[1], headingColor[2]);
+    doc.text("ELECTRIQUOTE", margin, 20);
+
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Cliente:", 120, 20);
-    doc.setFont("helvetica", "normal");
-    doc.text(client.name || 'Sin Nombre', 120, 25);
-    if(client.nif) doc.text("NIF/CIF: " + client.nif, 120, 30);
-    if(client.address) doc.text(client.address, 120, 35);
-    if(client.city) doc.text(client.city, 120, 40);
-    if(client.phone) doc.text("Tlf: " + client.phone, 120, 45);
+    doc.setTextColor(lightTextColor[0], lightTextColor[1], lightTextColor[2]);
+    doc.text("Tu solución en presupuestos eléctricos.", margin, 26);
 
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.line(margin, 35, pageWidth - margin, 35);
+
+
+    // --- Información del Presupuesto y Cliente ---
+    let topY = 45;
+
+    // Columna Izquierda: Cliente
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(headingColor[0], headingColor[1], headingColor[2]);
+    doc.text("PRESUPUESTO PARA:", margin, topY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    doc.text(client.name || 'Sin Nombre', margin, topY + 6);
+    let clientAddressY = topY + 6;
+    if (client.address) {
+        clientAddressY += 5;
+        doc.text(client.address, margin, clientAddressY);
+    }
+    if (client.city) {
+        clientAddressY += 5;
+        doc.text(client.city, margin, clientAddressY);
+    }
+    if (client.nif) {
+        clientAddressY += 5;
+        doc.text("NIF/CIF: " + client.nif, margin, clientAddressY);
+    }
+
+    // Columna Derecha: Detalles del presupuesto
+    const rightColX = pageWidth - margin - 60;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(headingColor[0], headingColor[1], headingColor[2]);
+    doc.text("REFERENCIA", rightColX, topY);
+    doc.text("FECHA", rightColX, topY + 12);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    doc.text(q.ref.toUpperCase(), rightColX + 30, topY, { align: 'right' });
+    
+    let dateStr = "N/A";
+    if (q.date && q.date.toDate) {
+        dateStr = q.date.toDate().toLocaleDateString('es-ES');
+    } else if (q.date) {
+        dateStr = new Date(q.date).toLocaleDateString('es-ES');
+    }
+    doc.text(dateStr, rightColX + 30, topY + 12, { align: 'right'});
+
+    // --- Tabla de Conceptos ---
+    const tableTopY = Math.max(clientAddressY, topY + 12) + 15;
+    
     const tableData = q.items.map(it => [
+        { content: it.name, styles: { fontStyle: 'bold' } },
         it.qty.toString(),
-        it.name,
         it.price.toFixed(2) + " €",
         it.sub.toFixed(2) + " €"
     ]);
 
     doc.autoTable({
-        startY: 60,
-        head: [['Cant.', 'Concepto', 'Precio Und.', 'Subtotal']],
+        startY: tableTopY,
+        head: [['CONCEPTO', 'CANT.', 'P. UNID.', 'IMPORTE']],
         body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [15, 23, 42] }
+        theme: 'grid', // 'striped', 'grid', 'plain'
+        styles: {
+            font: 'helvetica',
+            fontSize: 9,
+            cellPadding: 2.5,
+        },
+        headStyles: {
+            fillColor: [241, 245, 249], // slate-100
+            textColor: headingColor,
+            fontStyle: 'bold',
+            halign: 'left'
+        },
+        columnStyles: {
+            0: { halign: 'left', cellWidth: 'auto' },
+            1: { halign: 'center', cellWidth: 20 },
+            2: { halign: 'right', cellWidth: 30 },
+            3: { halign: 'right', cellWidth: 30 },
+        },
+        didDrawPage: (data) => {
+            // Footer
+            doc.setFontSize(8);
+            doc.setTextColor(lightTextColor[0], lightTextColor[1], lightTextColor[2]);
+            doc.setDrawColor(226, 232, 240); // slate-200
+            doc.line(margin, pageHeight - margin + 5, pageWidth - margin, pageHeight - margin + 5);
+            doc.text("Gracias por su confianza.", margin, pageHeight - 9);
+            const pageNumText = "Página " + doc.internal.getNumberOfPages();
+            doc.text(pageNumText, pageWidth - margin - doc.getTextWidth(pageNumText), pageHeight - 9);
+        }
     });
 
+    // --- Totales ---
     let finalY = doc.lastAutoTable.finalY + 10;
-    
+    const totalsX = pageWidth - margin - 60;
+
     doc.setFontSize(10);
-    doc.text("Subtotal: " + (q.subtotal || 0).toFixed(2) + " €", 140, finalY);
-    
-    // IVA Condicional PDF
+    doc.setFont("helvetica", "normal");
+    doc.text("Subtotal:", totalsX, finalY);
+    doc.text((q.subtotal || 0).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
+
     const ivaPerc = parseInt(q.iva || 0);
     if (ivaPerc > 0) {
-        const ivaVal = (q.subtotal * (ivaPerc / 100)).toFixed(2);
-        doc.text(`IVA (${ivaPerc}%): ` + ivaVal + " €", 140, finalY + 6);
-        finalY += 14;
-    } else {
-        finalY += 8;
+        finalY += 6;
+        const ivaVal = (q.subtotal * (ivaPerc / 100));
+        doc.text(`IVA (${ivaPerc}%):`, totalsX, finalY);
+        doc.text(ivaVal.toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
     }
 
-    doc.setFontSize(12);
+    finalY += 8;
+    doc.setDrawColor(textColor[0], textColor[1], textColor[2]);
+    doc.line(totalsX - 5, finalY, pageWidth - margin, finalY);
+    finalY += 4;
+    
+    doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("TOTAL: " + (q.total || 0).toFixed(2) + " €", 140, finalY);
+    doc.setTextColor(headingColor[0], headingColor[1], headingColor[2]);
+    doc.text("TOTAL:", totalsX, finalY);
+    doc.text((q.total || 0).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
 
+    // --- Finalizar y Mostrar PDF ---
     const pdfDataUri = doc.output('datauristring');
     document.getElementById('pdf-frame').src = pdfDataUri;
     
@@ -754,4 +847,3 @@ onAuthStateChanged(auth, (u) => {
 </script>
 </body>
 </html>
-
