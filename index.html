@@ -565,7 +565,7 @@ window.delItem = async (col, id) => {
     }
 };
 
-// Delegación de eventos global para todos los botones de eliminar
+// Delegación de eventos global para todos los botones de eliminar (fase de captura)
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-del-col][data-del-id]');
     if (btn) {
@@ -575,7 +575,7 @@ document.addEventListener('click', (e) => {
         const id = btn.getAttribute('data-del-id');
         window.delItem(col, id);
     }
-});
+}, true);
 
 const renderCls = () => {
     const search = document.getElementById('main-search').value.toLowerCase();
