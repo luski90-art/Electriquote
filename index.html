@@ -562,6 +562,7 @@ window.delItem = async (col, id, e) => {
             await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
         } catch (err) {
             console.error("Error eliminando:", err);
+            alert(`No se pudo eliminar. Es posible que sea un problema de permisos en Firebase. Error: ${err.message}`);
         }
     }
 };
