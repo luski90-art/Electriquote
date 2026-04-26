@@ -666,24 +666,7 @@ window.generatePDF = (id, event) => {
 
     doc.setFont('helvetica');
     doc.setTextColor(mainTextColor);
-
-    // --- Company Details (Placeholder - User can edit this) ---
-    // MODIFICA AQUÍ TUS DATOS DE EMPRESA
-    const companyName = "Nombre de tu Empresa";
-    const companyAddress = "Tu Dirección, 123";
-    const companyCity = "Ciudad, Código Postal";
-    const companyContact = "email@tuempresa.com | +34 123 456 789";
-    // ---
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text(companyName, margin, 50);
-    doc.setFont('helvetica', 'normal');
-    doc.text(companyAddress, margin, 65);
-    doc.text(companyCity, margin, 80);
-    doc.text(companyContact, margin, 95);
-
-
+    
     // --- Quote Title ---
     doc.setFontSize(26);
     doc.setFont('helvetica', 'bold');
