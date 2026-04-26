@@ -654,156 +654,168 @@ window.generatePDF = (id, event) => {
     const client = window.data.clients.find(c => c.id === q.clientId) || {};
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF('p', 'pt', 'a4'); // Using points for more precision
 
-    const pageHeight = doc.internal.pageSize.height;
-    const pageWidth = doc.internal.pageSize.width;
-    const margin = 14;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 40; // pt
 
-    // --- Colores y Fuentes ---
-    const primaryColor = [59, 130, 246]; // Blue-500
-    const textColor = [51, 65, 85]; // Slate-700
-    const lightTextColor = [100, 116, 139]; // Slate-500
-    const headingColor = [15, 23, 42]; // Slate-900
+    // --- Fonts and Colors ---
+    const mainTextColor = '#333333'; // Dark grey
+    const lightTextColor = '#777777'; // Lighter grey
+    const accentColor = '#4A90E2'; // A nice blue
 
-    doc.setFont("helvetica");
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    doc.setFont('helvetica');
+    doc.setTextColor(mainTextColor);
 
-    // --- Cabecera ---
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.setTextColor(headingColor[0], headingColor[1], headingColor[2]);
-    doc.text("ELECTRIQUOTE", margin, 20);
+    // --- Company Details (Placeholder - User can edit this) ---
+    // MODIFICA AQUÍ TUS DATOS DE EMPRESA
+    const companyName = "Nombre de tu Empresa";
+    const companyAddress = "Tu Dirección, 123";
+    const companyCity = "Ciudad, Código Postal";
+    const companyContact = "email@tuempresa.com | +34 123 456 789";
+    // ---
 
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.setTextColor(lightTextColor[0], lightTextColor[1], lightTextColor[2]);
-    doc.text("Tu solución en presupuestos eléctricos.", margin, 26);
+    doc.setFont('helvetica', 'bold');
+    doc.text(companyName, margin, 50);
+    doc.setFont('helvetica', 'normal');
+    doc.text(companyAddress, margin, 65);
+    doc.text(companyCity, margin, 80);
+    doc.text(companyContact, margin, 95);
 
-    doc.setDrawColor(226, 232, 240); // slate-200
-    doc.line(margin, 35, pageWidth - margin, 35);
+
+    // --- Quote Title ---
+    doc.setFontSize(26);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(accentColor);
+    doc.text("PRESUPUESTO", pageWidth - margin, 60, { align: 'right' });
 
 
-    // --- Información del Presupuesto y Cliente ---
-    let topY = 45;
+    // --- Client and Quote Info Boxes ---
+    const infoBoxY = 130;
+    const infoBoxWidth = (pageWidth - margin * 2 - 20) / 2;
+    doc.setDrawColor(lightTextColor);
 
-    // Columna Izquierda: Cliente
-    doc.setFont("helvetica", "bold");
+    // Client Box
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(lightTextColor);
+    doc.text("CLIENTE:", margin, infoBoxY);
+
     doc.setFontSize(10);
-    doc.setTextColor(headingColor[0], headingColor[1], headingColor[2]);
-    doc.text("PRESUPUESTO PARA:", margin, topY);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    doc.text(client.name || 'Sin Nombre', margin, topY + 6);
-    let clientAddressY = topY + 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(mainTextColor);
+    doc.text(client.name || 'Sin Nombre', margin, infoBoxY + 15);
+    let clientAddressY = infoBoxY + 15;
     if (client.address) {
-        clientAddressY += 5;
+        clientAddressY += 15;
         doc.text(client.address, margin, clientAddressY);
     }
     if (client.city) {
-        clientAddressY += 5;
+        clientAddressY += 15;
         doc.text(client.city, margin, clientAddressY);
     }
-    if (client.nif) {
-        clientAddressY += 5;
+     if (client.nif) {
+        clientAddressY += 15;
         doc.text("NIF/CIF: " + client.nif, margin, clientAddressY);
     }
 
-    // Columna Derecha: Detalles del presupuesto
-    const rightColX = pageWidth - margin - 60;
-    doc.setFont("helvetica", "bold");
+    // Quote Details Box
+    const rightInfoBoxX = pageWidth / 2 + 10;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(lightTextColor);
+    doc.text("REFERENCIA", rightInfoBoxX, infoBoxY);
+    doc.text("FECHA", rightInfoBoxX, infoBoxY + 30);
+    
     doc.setFontSize(10);
-    doc.setTextColor(headingColor[0], headingColor[1], headingColor[2]);
-    doc.text("REFERENCIA", rightColX, topY);
-    doc.text("FECHA", rightColX, topY + 12);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    doc.text(q.ref.toUpperCase(), rightColX + 30, topY, { align: 'right' });
-    
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(mainTextColor);
+    doc.text(q.ref.toUpperCase(), rightInfoBoxX, infoBoxY + 15);
+
     let dateStr = "N/A";
     if (q.date && q.date.toDate) {
         dateStr = q.date.toDate().toLocaleDateString('es-ES');
     } else if (q.date) {
         dateStr = new Date(q.date).toLocaleDateString('es-ES');
     }
-    doc.text(dateStr, rightColX + 30, topY + 12, { align: 'right'});
+    doc.text(dateStr, rightInfoBoxX, infoBoxY + 45);
 
-    // --- Tabla de Conceptos ---
-    const tableTopY = Math.max(clientAddressY, topY + 12) + 15;
+
+    // --- Table ---
+    const tableTopY = clientAddressY + 40;
     
     const tableData = q.items.map(it => [
-        { content: it.name, styles: { fontStyle: 'bold' } },
-        it.qty.toString(),
-        it.price.toFixed(2) + " €",
-        it.sub.toFixed(2) + " €"
+        { content: it.name },
+        { content: it.qty.toString() },
+        { content: it.price.toFixed(2) + " €" },
+        { content: it.sub.toFixed(2) + " €" }
     ]);
 
     doc.autoTable({
         startY: tableTopY,
-        head: [['CONCEPTO', 'CANT.', 'P. UNID.', 'IMPORTE']],
+        head: [['Concepto', 'Cant.', 'Precio Unitario', 'Total']],
         body: tableData,
-        theme: 'grid', // 'striped', 'grid', 'plain'
+        theme: 'grid',
         styles: {
             font: 'helvetica',
             fontSize: 9,
-            cellPadding: 2.5,
+            cellPadding: 4,
+            overflow: 'linebreak'
         },
         headStyles: {
-            fillColor: [241, 245, 249], // slate-100
-            textColor: headingColor,
+            fillColor: '#F4F4F4', // Light grey header
+            textColor: mainTextColor,
             fontStyle: 'bold',
             halign: 'left'
         },
         columnStyles: {
             0: { halign: 'left', cellWidth: 'auto' },
-            1: { halign: 'center', cellWidth: 20 },
-            2: { halign: 'right', cellWidth: 30 },
-            3: { halign: 'right', cellWidth: 30 },
+            1: { halign: 'center', cellWidth: 50 },
+            2: { halign: 'right', cellWidth: 80 },
+            3: { halign: 'right', cellWidth: 80 },
         },
         didDrawPage: (data) => {
-            // Footer
+            // Footer for each page
             doc.setFontSize(8);
-            doc.setTextColor(lightTextColor[0], lightTextColor[1], lightTextColor[2]);
-            doc.setDrawColor(226, 232, 240); // slate-200
-            doc.line(margin, pageHeight - margin + 5, pageWidth - margin, pageHeight - margin + 5);
-            doc.text("Gracias por su confianza.", margin, pageHeight - 9);
-            const pageNumText = "Página " + doc.internal.getNumberOfPages();
-            doc.text(pageNumText, pageWidth - margin - doc.getTextWidth(pageNumText), pageHeight - 9);
+            doc.setTextColor(lightTextColor);
+            const pageCount = doc.internal.getNumberOfPages();
+            doc.text("Página " + data.pageNumber + " de " + pageCount, pageWidth / 2, doc.internal.pageSize.height - 20, { align: 'center' });
         }
     });
 
-    // --- Totales ---
-    let finalY = doc.lastAutoTable.finalY + 10;
-    const totalsX = pageWidth - margin - 60;
+    // --- Totals ---
+    let finalY = doc.lastAutoTable.finalY + 20;
+    const totalsX = pageWidth - margin - 150;
 
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(mainTextColor);
+    
     doc.text("Subtotal:", totalsX, finalY);
     doc.text((q.subtotal || 0).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
 
     const ivaPerc = parseInt(q.iva || 0);
     if (ivaPerc > 0) {
-        finalY += 6;
+        finalY += 20;
         const ivaVal = (q.subtotal * (ivaPerc / 100));
         doc.text(`IVA (${ivaPerc}%):`, totalsX, finalY);
         doc.text(ivaVal.toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
     }
 
-    finalY += 8;
-    doc.setDrawColor(textColor[0], textColor[1], textColor[2]);
-    doc.line(totalsX - 5, finalY, pageWidth - margin, finalY);
-    finalY += 4;
+    finalY += 25;
+    doc.setLineWidth(1.5);
+    doc.setDrawColor(mainTextColor);
+    doc.line(totalsX, finalY, pageWidth - margin, finalY);
+    finalY += 15;
     
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(headingColor[0], headingColor[1], headingColor[2]);
+    doc.setTextColor(accentColor);
     doc.text("TOTAL:", totalsX, finalY);
     doc.text((q.total || 0).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
 
-    // --- Finalizar y Mostrar PDF ---
+    // --- Finalize & Display ---
     const pdfDataUri = doc.output('datauristring');
     document.getElementById('pdf-frame').src = pdfDataUri;
     
