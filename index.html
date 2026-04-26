@@ -562,7 +562,6 @@ window.delItem = async (col, id, e) => {
             await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
         } catch (err) {
             console.error("Error eliminando:", err);
-            alert(`No se pudo eliminar. Es posible que sea un problema de permisos en Firebase. Error: ${err.message}`);
         }
     }
 };
@@ -634,8 +633,8 @@ const renderQts = () => {
             <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
                 <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
                 <div class="flex gap-2">
-                    <button onclick="window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
-                    <button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <button onclick="event.stopPropagation(); window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
+                    <button onclick="event.stopPropagation(); window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </div>
         </div>
@@ -755,3 +754,4 @@ onAuthStateChanged(auth, (u) => {
 </script>
 </body>
 </html>
+
