@@ -285,6 +285,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebas
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
+window.firebaseImports = { deleteDoc, doc };
+
 const firebaseConfig = {
     apiKey: "AIzaSyBuX9O3WBR5zX_L-WYdRiwirBl50aUFzlg",
     authDomain: "electriquote-b92c3.firebaseapp.com",
@@ -557,9 +559,9 @@ window.saveFinalQuote = async () => {
 
 window.delItem = function(col, id) {
     if(confirm("¿Seguro que quieres eliminar?")) {
+        const { deleteDoc, doc } = window.firebaseImports;
         deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id)).catch(err => {
             console.error("Error eliminando:", err);
-            alert("Error al eliminar");
         });
     }
     return false;
