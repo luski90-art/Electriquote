@@ -36,26 +36,26 @@
         @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
-<body class="min-h-screen pb-24 text-slate-800 bg-slate-50 dark:bg-darkBg dark:text-slate-100">
+<body class="min-h-screen pb-24 text-slate-800 bg-slate-50 dark:bg-darkBg dark:text-slate-100"&gt;
 
 <!-- PANTALLA DE ACCESO -->
-<div id="auth-screen" class="fixed inset-0 bg-slate-900 z-[999] flex flex-col items-center justify-center p-4">
-    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[2.5rem] shadow-2xl p-10 fade-in text-center">
-        <div class="bg-slate-900 dark:bg-blue-600 w-16 h-16 rounded-2xl text-white flex items-center justify-center mx-auto mb-6">
-            <i data-lucide="lock" class="w-8 h-8"></i>
+<div id="auth-screen" class="fixed inset-0 bg-slate-900 z-[999] flex flex-col items-center justify-center p-4"&gt;
+    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[2.5rem] shadow-2xl p-10 fade-in text-center"&gt;
+        <div class="bg-slate-900 dark:bg-blue-600 w-16 h-16 rounded-2xl text-white flex items-center justify-center mx-auto mb-6"&gt;
+            <i data-lucide="lock" class="w-8 h-8"&gt;</i>
         </div>
-        <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white">Acceso Privado</h2>
-        <p class="text-slate-500 text-sm mt-2 mb-8">Sistema de Presupuestos</p>
+        <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white"&gt;Acceso Privado</h2>
+        <p class="text-slate-500 text-sm mt-2 mb-8"&gt;Sistema de Presupuestos</p&gt;
         
-        <div class="space-y-3">
-            <input id="usr-fld" type="email" autocomplete="off" placeholder="Email" class="w-full p-4 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl outline-none focus:ring-2 ring-slate-900 transition-all">
-            <input id="key-fld" type="password" autocomplete="off" placeholder="Contraseña" class="w-full p-4 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl outline-none focus:ring-2 ring-slate-900 transition-all">
+        <div class="space-y-3"&gt;
+            <input id="usr-fld" type="email" autocomplete="off" placeholder="Email" class="w-full p-4 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl outline-none focus:ring-2 ring-slate-900 transition-all"&gt;
+            <input id="key-fld" type="password" autocomplete="off" placeholder="Contraseña" class="w-full p-4 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl outline-none focus:ring-2 ring-slate-900 transition-all"&gt;
         </div>
         
-        <p id="auth-error-msg" class="text-red-500 text-xs mt-4 font-bold hidden"></p>
+        <p id="auth-error-msg" class="text-red-500 text-xs mt-4 font-bold hidden"&gt;</p&gt;
 
-        <div class="flex flex-col gap-3 mt-6">
-            <button onclick="window.processAuth()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 flex items-center justify-center gap-2">
+        <div class="flex flex-col gap-3 mt-6"&gt;
+            <button onclick="window.processAuth()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 flex items-center justify-center gap-2"&gt;
                 <span>Entrar al Panel</span>
             </button>
         </div>
@@ -63,224 +63,224 @@
 </div>
 
 <!-- CABECERA -->
-<header class="bg-white dark:bg-darkCard border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm">
-    <div class="flex items-center gap-3">
-        <div class="bg-slate-900 dark:bg-blue-600 p-2 rounded-lg text-white"><i data-lucide="zap" class="w-5 h-5"></i></div>
-        <h1 class="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">ELECTRIQUOTE</h1>
+<header class="bg-white dark:bg-darkCard border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm"&gt;
+    <div class="flex items-center gap-3"&gt;
+        <div class="bg-slate-900 dark:bg-blue-600 p-2 rounded-lg text-white"&gt;<i data-lucide="zap" class="w-5 h-5"&gt;</i></div>
+        <h1 class="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight"&gt;ELECTRIQUOTE</h1>
     </div>
-    <div class="flex items-center gap-2">
-        <button onclick="window.toggleDarkMode()" class="p-2 text-slate-400 hover:text-blue-500 transition-colors">
-            <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
+    <div class="flex items-center gap-2"&gt;
+        <button onclick="window.toggleDarkMode()" class="p-2 text-slate-400 hover:text-blue-500 transition-colors"&gt;
+            <i id="theme-icon" data-lucide="moon" class="w-5 h-5"&gt;</i>
         </button>
-        <button onclick="window.doLogout()" class="p-2 text-slate-400 hover:text-red-500"><i data-lucide="log-out" class="w-5 h-5"></i></button>
-        <div id="status-dot" class="w-3 h-3 rounded-full bg-slate-300"></div>
+        <button onclick="window.doLogout()" class="p-2 text-slate-400 hover:text-red-500"&gt;<i data-lucide="log-out" class="w-5 h-5"&gt;</i></button>
+        <div id="status-dot" class="w-3 h-3 rounded-full bg-slate-300"&gt;</div>
     </div>
 </header>
 
-<main class="max-w-4xl mx-auto p-4">
+<main class="max-w-4xl mx-auto p-4"&gt;
     <!-- FILTROS Y BUSCADORES -->
-    <div id="search-bar" class="mb-6 flex gap-2">
-        <div class="relative flex-1">
-            <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input id="main-search" oninput="window.applyFilters()" type="text" placeholder="Buscar..." class="w-full pl-11 pr-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none focus:ring-2 ring-blue-500">
+    <div id="search-bar" class="mb-6 flex gap-2"&gt;
+        <div class="relative flex-1"&gt;
+            <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"&gt;</i>
+            <input id="main-search" oninput="window.applyFilters()" type="text" placeholder="Buscar..." class="w-full pl-11 pr-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none focus:ring-2 ring-blue-500"&gt;
         </div>
-        <select id="status-filter" onchange="window.applyFilters()" class="px-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none text-sm font-bold">
-            <option value="todos">Todos</option>
-            <option value="pendiente">Pendientes</option>
-            <option value="aprobado">Aprobados</option>
-            <option value="rechazado">Rechazados</option>
+        <select id="status-filter" onchange="window.applyFilters()" class="px-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none text-sm font-bold"&gt;
+            <option value="todos"&gt;Todos</option&gt;
+            <option value="pendiente"&gt;Pendientes</option&gt;
+            <option value="aprobado"&gt;Aprobados</option&gt;
+            <option value="rechazado"&gt;Rechazados</option&gt;
         </select>
     </div>
 
     <!-- VISTAS -->
-    <section id="view-quotes" class="space-y-6 fade-in">
-        <div class="flex justify-between items-center">
-            <h2 class="text-2xl font-extrabold">Proyectos</h2>
-            <div class="flex gap-2">
-                <button onclick="window.openTemplateModal()" class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-3 rounded-xl font-bold flex items-center gap-2 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> Plantillas</button>
-                <button onclick="window.openQuoteModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"><i data-lucide="plus"></i> Nuevo</button>
+    <section id="view-quotes" class="space-y-6 fade-in"&gt;
+        <div class="flex justify-between items-center"&gt;
+            <h2 class="text-2xl font-extrabold"&gt;Proyectos</h2>
+            <div class="flex gap-2"&gt;
+                <button onclick="window.openTemplateModal()" class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-3 rounded-xl font-bold flex items-center gap-2 text-sm"&gt;<i data-lucide="layers" class="w-4 h-4"&gt;</i> Plantillas</button&gt;
+                <button onclick="window.openQuoteModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"&gt;<i data-lucide="plus"&gt;</i> Nuevo</button&gt;
             </div>
         </div>
-        <div id="quotes-list" class="grid gap-4">
-            <div class="h-24 rounded-2xl skeleton"></div>
+        <div id="quotes-list" class="grid gap-4"&gt;
+            <div class="h-24 rounded-2xl skeleton"&gt;</div>
         </div>
     </section>
 
-    <section id="view-materials" class="hidden space-y-6 fade-in">
-        <div class="flex justify-between items-center">
-            <h2 class="text-2xl font-extrabold">Catálogo de Conceptos</h2>
-            <button onclick="window.openMaterialModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"><i data-lucide="plus"></i> Añadir</button>
+    <section id="view-materials" class="hidden space-y-6 fade-in"&gt;
+        <div class="flex justify-between items-center"&gt;
+            <h2 class="text-2xl font-extrabold"&gt;Catálogo de Conceptos</h2>
+            <button onclick="window.openMaterialModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"&gt;<i data-lucide="plus"&gt;</i> Añadir</button&gt;
         </div>
-        <div id="materials-list" class="grid sm:grid-cols-2 gap-4"></div>
+        <div id="materials-list" class="grid sm:grid-cols-2 gap-4"&gt;</div>
     </section>
 
-    <section id="view-clients" class="hidden space-y-6 fade-in">
-        <div class="flex justify-between items-center">
-            <h2 class="text-2xl font-extrabold">Clientes</h2>
-            <button onclick="window.openClientModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"><i data-lucide="user-plus"></i> Nuevo</button>
+    <section id="view-clients" class="hidden space-y-6 fade-in"&gt;
+        <div class="flex justify-between items-center"&gt;
+            <h2 class="text-2xl font-extrabold"&gt;Clientes</h2>
+            <button onclick="window.openClientModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"&gt;<i data-lucide="user-plus"&gt;</i> Nuevo</button&gt;
         </div>
-        <div id="clients-list" class="grid sm:grid-cols-2 gap-4"></div>
+        <div id="clients-list" class="grid sm:grid-cols-2 gap-4"&gt;</div>
     </section>
 </main>
 
-<nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-darkCard border-t border-slate-200 dark:border-slate-800 flex justify-around items-center h-20 z-40 shadow-lg">
-    <button onclick="window.switchView('quotes')" id="nav-quotes" class="flex-1 flex flex-col items-center justify-center active-tab h-full">
-        <i data-lucide="layout-grid" class="w-6 h-6 mb-1"></i>
-        <span class="text-[10px] font-bold uppercase">Proyectos</span>
-    </button>
-    <button onclick="window.switchView('materials')" id="nav-materials" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">
-        <i data-lucide="package" class="w-6 h-6 mb-1"></i>
-        <span class="text-[10px] font-bold uppercase">Catálogo</span>
-    </button>
-    <button onclick="window.switchView('clients')" id="nav-clients" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">
-        <i data-lucide="users" class="w-6 h-6 mb-1"></i>
-        <span class="text-[10px] font-bold uppercase">Clientes</span>
-    </button>
+<nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-darkCard border-t border-slate-200 dark:border-slate-800 flex justify-around items-center h-20 z-40 shadow-lg"&gt;
+    <button onclick="window.switchView('quotes')" id="nav-quotes" class="flex-1 flex flex-col items-center justify-center active-tab h-full"&gt;
+        <i data-lucide="layout-grid" class="w-6 h-6 mb-1"&gt;</i>
+        <span class="text-[10px] font-bold uppercase"&gt;Proyectos</span>
+    </button&gt;
+    <button onclick="window.switchView('materials')" id="nav-materials" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full"&gt;
+        <i data-lucide="package" class="w-6 h-6 mb-1"&gt;</i>
+        <span class="text-[10px] font-bold uppercase"&gt;Catálogo</span>
+    </button&gt;
+    <button onclick="window.switchView('clients')" id="nav-clients" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full"&gt;
+        <i data-lucide="users" class="w-6 h-6 mb-1"&gt;</i>
+        <span class="text-[10px] font-bold uppercase"&gt;Clientes</span>
+    </button&gt;
 </nav>
 
 <!-- MODAL CLIENTE -->
-<div id="modal-client" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]">
-    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4 shadow-2xl">
-        <h3 class="font-black text-xl" id="client-title-modal">Cliente</h3>
-        <input id="cl-name" placeholder="Nombre" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <input id="cl-phone" placeholder="Teléfono" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <input id="cl-nif" placeholder="NIF / CIF" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <input id="cl-address" placeholder="Dirección" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <input id="cl-city" placeholder="Ciudad / Municipio" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <button onclick="window.saveClientData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl">Guardar</button>
-        <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm">Cerrar</button>
+<div id="modal-client" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]"&gt;
+    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4 shadow-2xl"&gt;
+        <h3 class="font-black text-xl" id="client-title-modal"&gt;Cliente</h3>
+        <input id="cl-name" placeholder="Nombre" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none"&gt;
+        <input id="cl-phone" placeholder="Teléfono" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none"&gt;
+        <input id="cl-nif" placeholder="NIF / CIF" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none"&gt;
+        <input id="cl-address" placeholder="Dirección" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none"&gt;
+        <input id="cl-city" placeholder="Ciudad / Municipio" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none"&gt;
+        <button onclick="window.saveClientData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl"&gt;Guardar</button&gt;
+        <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm"&gt;Cerrar</button&gt;
     </div>
 </div>
 
 <!-- MODAL MATERIAL -->
-<div id="modal-material" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]">
-    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4">
-        <h3 class="font-black text-xl" id="mat-title-modal">Concepto</h3>
-        <input id="mt-name" placeholder="Nombre Material / Partida" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <div class="grid grid-cols-2 gap-2">
+<div id="modal-material" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]"&gt;
+    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4"&gt;
+        <h3 class="font-black text-xl" id="mat-title-modal"&gt;Concepto</h3>
+        <input id="mt-name" placeholder="Nombre Material / Partida" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none"&gt;
+        <div class="grid grid-cols-2 gap-2"&gt;
             <div>
-                <label class="text-[10px] font-bold text-slate-400 block mb-1">P. VENTA (€)</label>
-                <input id="mt-price" type="number" step="0.01" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
+                <label class="text-[10px] font-bold text-slate-400 block mb-1"&gt;P. VENTA (€)</label&gt;
+                <input id="mt-price" type="number" step="0.01" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none"&gt;
             </div>
             <div>
-                <label class="text-[10px] font-bold text-slate-400 block mb-1">COSTO MAT. (€)</label>
-                <input id="mt-cost" type="number" step="0.01" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
+                <label class="text-[10px] font-bold text-slate-400 block mb-1"&gt;COSTO MAT. (€)</label&gt;
+                <input id="mt-cost" type="number" step="0.01" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none"&gt;
             </div>
         </div>
-        <button onclick="window.saveMaterialData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl">Guardar</button>
-        <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm">Cerrar</button>
+        <button onclick="window.saveMaterialData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl"&gt;Guardar</button&gt;
+        <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm"&gt;Cerrar</button&gt;
     </div>
 </div>
 
 <!-- MODAL PRESUPUESTO -->
-<div id="modal-quote" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]">
-    <div class="bg-white dark:bg-darkCard w-full max-w-xl rounded-[2rem] overflow-hidden flex flex-col max-h-[85vh] shadow-2xl">
-        <div class="p-6 border-b dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-between items-center">
-            <h3 id="quote-title-modal" class="font-black text-xl">Presupuesto</h3>
-            <button onclick="window.closeAllModals()"><i data-lucide="x"></i></button>
+<div id="modal-quote" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]"&gt;
+    <div class="bg-white dark:bg-darkCard w-full max-w-xl rounded-[2rem] overflow-hidden flex flex-col max-h-[85vh] shadow-2xl"&gt;
+        <div class="p-6 border-b dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-between items-center"&gt;
+            <h3 id="quote-title-modal" class="font-black text-xl"&gt;Presupuesto</h3>
+            <button onclick="window.closeAllModals()"&gt;<i data-lucide="x"&gt;</i></button&gt;
         </div>
-        <div class="p-6 overflow-y-auto space-y-4 flex-1">
-            <input id="q-ref" placeholder="Referencia Proyecto" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 rounded-xl font-bold">
-            <div class="flex gap-2">
-                <select id="q-cl-select" class="flex-1 p-4 border dark:border-slate-700 dark:bg-slate-800 rounded-xl"></select>
-                <select id="q-status" class="w-1/3 p-4 border dark:border-slate-700 dark:bg-slate-800 rounded-xl font-semibold text-sm">
-                    <option value="pendiente">Pendiente</option>
-                    <option value="aprobado">Aprobado</option>
-                    <option value="rechazado">Rechazado</option>
-                </select>
+        <div class="p-6 overflow-y-auto space-y-4 flex-1"&gt;
+            <input id="q-ref" placeholder="Referencia Proyecto" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 rounded-xl font-bold"&gt;
+            <div class="flex gap-2"&gt;
+                <select id="q-cl-select" class="flex-1 p-4 border dark:border-slate-700 dark:bg-slate-800 rounded-xl"&gt;</select&gt;
+                <select id="q-status" class="w-1/3 p-4 border dark:border-slate-700 dark:bg-slate-800 rounded-xl font-semibold text-sm"&gt;
+                    <option value="pendiente"&gt;Pendiente</option&gt;
+                    <option value="aprobado"&gt;Aprobado</option&gt;
+                    <option value="rechazado"&gt;Rechazado</option&gt;
+                </select&gt;
             </div>
             
-            <div class="flex gap-2 items-center bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl">
-                <i data-lucide="percent" class="w-4 h-4 text-blue-500"></i>
-                <span class="text-sm font-bold flex-1">Aplicar IVA:</span>
-                <select id="q-iva" onchange="window.renderQuoteList()" class="p-2 border rounded-lg dark:bg-slate-800">
-                    <option value="0">Sin IVA</option>
-                    <option value="10">10%</option>
-                    <option value="21" selected>21%</option>
-                </select>
+            <div class="flex gap-2 items-center bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl"&gt;
+                <i data-lucide="percent" class="w-4 h-4 text-blue-500"&gt;</i>
+                <span class="text-sm font-bold flex-1"&gt;Aplicar IVA:</span>
+                <select id="q-iva" onchange="window.renderQuoteList()" class="p-2 border rounded-lg dark:bg-slate-800"&gt;
+                    <option value="0"&gt;Sin IVA</option&gt;
+                    <option value="10"&gt;10%</option&gt;
+                    <option value="21" selected&gt;21%</option&gt;
+                </select&gt;
             </div>
 
-            <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-700">
-                <div class="flex flex-col gap-2 mb-4">
-                    <div class="flex gap-2">
-                        <select id="q-mt-select" class="flex-1 p-3 border dark:border-slate-700 dark:bg-slate-800 rounded-xl text-sm"></select>
-                        <input id="q-mt-qty" type="number" value="1" class="w-16 p-3 border dark:border-slate-700 dark:bg-slate-800 rounded-xl text-center">
-                        <button onclick="window.addItemToQuote()" class="bg-slate-900 dark:bg-blue-600 text-white px-4 rounded-xl shadow-md"><i data-lucide="plus"></i></button>
+            <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-700"&gt;
+                <div class="flex flex-col gap-2 mb-4"&gt;
+                    <div class="flex gap-2"&gt;
+                        <select id="q-mt-select" class="flex-1 p-3 border dark:border-slate-700 dark:bg-slate-800 rounded-xl text-sm"&gt;</select&gt;
+                        <input id="q-mt-qty" type="number" value="1" class="w-16 p-3 border dark:border-slate-700 dark:bg-slate-800 rounded-xl text-center"&gt;
+                        <button onclick="window.addItemToQuote()" class="bg-slate-900 dark:bg-blue-600 text-white px-4 rounded-xl shadow-md"&gt;<i data-lucide="plus"&gt;</i></button&gt;
                     </div>
                     <!-- Selector de Plantillas -->
-                    <div id="template-quick-add" class="flex gap-2 items-center">
-                        <select id="q-tp-select" class="flex-1 p-2 bg-white dark:bg-slate-800 border rounded-lg text-xs font-bold text-slate-500"></select>
-                        <button onclick="window.addTemplateItemsToQuote()" class="text-xs font-bold bg-slate-200 dark:bg-slate-700 px-3 py-2 rounded-lg">Cargar Pack</button>
+                    <div id="template-quick-add" class="flex gap-2 items-center"&gt;
+                        <select id="q-tp-select" class="flex-1 p-2 bg-white dark:bg-slate-800 border rounded-lg text-xs font-bold text-slate-500"&gt;</select&gt;
+                        <button onclick="window.addTemplateItemsToQuote()" class="text-xs font-bold bg-slate-200 dark:bg-slate-700 px-3 py-2 rounded-lg"&gt;Cargar Pack</button&gt;
                     </div>
                 </div>
                 
-                <ul id="q-items-list" class="space-y-2 mb-4"></ul>
+                <ul id="q-items-list" class="space-y-2 mb-4"&gt;</ul>
                 
-                <div class="pt-4 border-t dark:border-slate-700 space-y-1">
-                    <div class="flex justify-between text-xs font-bold text-slate-400">
+                <div class="pt-4 border-t dark:border-slate-700 space-y-1"&gt;
+                    <div class="flex justify-between text-xs font-bold text-slate-400"&gt;
                         <span>SUBTOTAL</span>
-                        <span id="q-subtotal-val">0.00 €</span>
+                        <span id="q-subtotal-val"&gt;0.00 €</span>
                     </div>
                     <!-- IVA Condicional en UI -->
-                    <div id="q-iva-row" class="flex justify-between text-xs font-bold text-slate-400">
+                    <div id="q-iva-row" class="flex justify-between text-xs font-bold text-slate-400"&gt;
                         <span>IVA</span>
-                        <span id="q-iva-val">0.00 €</span>
+                        <span id="q-iva-val"&gt;0.00 €</span>
                     </div>
-                    <div class="flex justify-between font-black text-lg pt-2 border-t dark:border-slate-700">
+                    <div class="flex justify-between font-black text-lg pt-2 border-t dark:border-slate-700"&gt;
                         <span>TOTAL</span>
-                        <span id="q-total-val">0.00 €</span>
+                        <span id="q-total-val"&gt;0.00 €</span>
                     </div>
                     <!-- Beneficio Neto -->
-                    <div class="flex justify-between text-xs font-bold text-emerald-500 mt-2">
+                    <div class="flex justify-between text-xs font-bold text-emerald-500 mt-2"&gt;
                         <span>BENEFICIO ESTIMADO</span>
-                        <span id="q-profit-val">0.00 €</span>
+                        <span id="q-profit-val"&gt;0.00 €</span>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="p-6 border-t dark:border-slate-700">
-            <button onclick="window.saveFinalQuote()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl text-lg uppercase tracking-wider">Guardar Presupuesto</button>
+        <div class="p-6 border-t dark:border-slate-700"&gt;
+            <button onclick="window.saveFinalQuote()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl text-lg uppercase tracking-wider"&gt;Guardar Presupuesto</button&gt;
         </div>
     </div>
 </div>
 
 <!-- MODAL PLANTILLAS -->
-<div id="modal-template" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[110]">
-    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4">
-        <h3 class="font-black text-xl">Gestionar Plantillas</h3>
-        <div class="space-y-2">
-            <input id="tp-name" placeholder="Nombre (ej: Instalación Vivienda)" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-            <p class="text-[10px] text-slate-400">Guarda los materiales del presupuesto actual como una plantilla.</p>
+<div id="modal-template" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[110]"&gt;
+    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4"&gt;
+        <h3 class="font-black text-xl"&gt;Gestionar Plantillas</h3>
+        <div class="space-y-2"&gt;
+            <input id="tp-name" placeholder="Nombre (ej: Instalación Vivienda)" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none"&gt;
+            <p class="text-[10px] text-slate-400"&gt;Guarda los materiales del presupuesto actual como una plantilla.</p&gt;
         </div>
-        <button onclick="window.saveCurrentAsTemplate()" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl">Crear desde Selección Actual</button>
-        <div id="templates-list-ui" class="space-y-2 pt-4 border-t dark:border-slate-700 max-h-40 overflow-y-auto"></div>
-        <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm">Cerrar</button>
+        <button onclick="window.saveCurrentAsTemplate()" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl"&gt;Crear desde Selección Actual</button&gt;
+        <div id="templates-list-ui" class="space-y-2 pt-4 border-t dark:border-slate-700 max-h-40 overflow-y-auto"&gt;</div>
+        <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm"&gt;Cerrar</button&gt;
     </div>
 </div>
 
 <!-- MODAL PDF -->
-<div id="modal-pdf" class="fixed inset-0 bg-slate-900/90 hidden items-center justify-center p-4 z-[200]">
-    <div class="bg-white dark:bg-darkCard w-full max-w-4xl h-[90vh] rounded-[1.5rem] flex flex-col overflow-hidden shadow-2xl">
-        <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 flex justify-between items-center">
-            <span class="font-bold">Diseño Presupuesto</span>
-            <button onclick="window.closeAllModals()"><i data-lucide="x"></i></button>
+<div id="modal-pdf" class="fixed inset-0 bg-slate-900/90 hidden items-center justify-center p-4 z-[200]"&gt;
+    <div class="bg-white dark:bg-darkCard w-full max-w-4xl h-[90vh] rounded-[1.5rem] flex flex-col overflow-hidden shadow-2xl"&gt;
+        <div class="p-4 bg-slate-50 dark:bg-slate-800 border-b dark:border-slate-700 flex justify-between items-center"&gt;
+            <span class="font-bold"&gt;Diseño Presupuesto</span>
+            <button onclick="window.closeAllModals()"&gt;<i data-lucide="x"&gt;</i></button&gt;
         </div>
-        <iframe id="pdf-frame" class="flex-1 border-none w-full h-full"></iframe>
-        <div id="pdf-mobile-fallback" class="hidden flex-1 flex-col items-center justify-center p-6 text-center bg-slate-50 dark:bg-slate-900">
-            <i data-lucide="smartphone" class="w-12 h-12 text-slate-500 mb-4"></i>
-            <h4 class="font-bold text-xl mb-2">Vista móvil</h4>
-            <p class="text-slate-500 mb-6 text-sm">Los navegadores móviles requieren descarga o apertura externa.</p>
-            <button id="btn-open-pdf" class="py-4 px-6 bg-blue-600 text-white font-bold rounded-xl w-full max-w-xs flex items-center justify-center gap-2">
-                <i data-lucide="external-link" class="w-5 h-5"></i> Abrir PDF
-            </button>
+        <iframe id="pdf-frame" class="flex-1 border-none w-full h-full"&gt;</iframe>
+        <div id="pdf-mobile-fallback" class="hidden flex-1 flex-col items-center justify-center p-6 text-center bg-slate-50 dark:bg-slate-900"&gt;
+            <i data-lucide="smartphone" class="w-12 h-12 text-slate-500 mb-4"&gt;</i>
+            <h4 class="font-bold text-xl mb-2"&gt;Vista móvil</h4>
+            <p class="text-slate-500 mb-6 text-sm"&gt;Los navegadores móviles requieren descarga o apertura externa.</p&gt;
+            <button id="btn-open-pdf" class="py-4 px-6 bg-blue-600 text-white font-bold rounded-xl w-full max-w-xs flex items-center justify-center gap-2"&gt;
+                <i data-lucide="external-link" class="w-5 h-5"&gt;</i> Abrir PDF
+            </button&gt;
         </div>
-        <div class="p-4 flex gap-2 border-t dark:border-slate-700">
-            <button id="btn-dl-pdf" class="flex-1 py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl uppercase">Descargar Archivo</button>
+        <div class="p-4 flex gap-2 border-t dark:border-slate-700"&gt;
+            <button id="btn-dl-pdf" class="flex-1 py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl uppercase"&gt;Descargar Archivo</button&gt;
         </div>
     </div>
 </div>
 
-<script type="module">
+<script type="module"&gt;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
@@ -555,13 +555,16 @@ window.saveFinalQuote = async () => {
     window.closeAllModals();
 };
 
+// FUNCIÓN CORREGIDA
 window.delItem = async (col, id, e) => {
-    if(e) e.stopPropagation();
-    if(confirm("¿Seguro que quieres eliminar?")) {
+    if(e) { e.preventDefault(); e.stopPropagation(); }
+    if(confirm("¿Seguro que quieres eliminar este elemento?")) {
         try {
-            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
+            const uid = auth.currentUser ? auth.currentUser.uid : user.uid;
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', uid, col, id));
         } catch (err) {
             console.error("Error eliminando:", err);
+            alert("No se pudo eliminar el elemento.");
         }
     }
 };
@@ -580,7 +583,7 @@ const renderCls = () => {
                     <span>${c.nif || 'Sin NIF'}</span>
                 </div>
             </div>
-            <button onclick="window.delItem('clients','${c.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <button onclick="event.stopPropagation(); window.delItem('clients','${c.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
         </div>
     `).join('');
     lucide.createIcons();
@@ -600,7 +603,7 @@ const renderMats = () => {
                     <span>Costo: ${(m.cost || 0).toFixed(2)}€</span>
                 </div>
             </div>
-            <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <button onclick="event.stopPropagation(); window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
         </div>
     `).join('');
     lucide.createIcons();
@@ -754,4 +757,3 @@ onAuthStateChanged(auth, (u) => {
 </script>
 </body>
 </html>
-
