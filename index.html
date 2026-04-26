@@ -435,8 +435,9 @@ const fetchMore = async (colName, append = false) => {
     try {
         const colRef = collection(db, 'artifacts', appId, 'users', user.uid, colName);
         let q;
-
-        const commonQueries = [orderBy('up', 'desc'), limit(PAGE_SIZE)];
+        
+        const orderByField = colName === 'quotes' ? 'date' : 'up';
+        const commonQueries = [orderBy(orderByField, 'desc'), limit(PAGE_SIZE)];
         
         if (append && window.lastDoc[colName]) {
             q = query(colRef, ...commonQueries, startAfter(window.lastDoc[colName]));
@@ -457,7 +458,18 @@ const fetchMore = async (colName, append = false) => {
 
     } catch (err) {
         console.error(`Error fetching ${colName}:`, err);
-        showToast(`Error cargando ${colName}`, 'error');
+        // Attempt a fallback query if the primary one fails (e.g., field does not exist)
+        if (err.code === 'failed-precondition') {
+            console.warn(`Query failed on field. Retrying without ordering for ${colName}.`);
+            const fallbackQuery = query(collection(db, 'artifacts', appId, 'users', user.uid, colName), limit(PAGE_SIZE));
+            const snapshot = await getDocs(fallbackQuery);
+            const newDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            window.data[colName].push(...newDocs);
+            renderData(window.data[colName], colName, { append: false, moreAvailable: false }); // No more loading if fallback
+
+        } else {
+            showToast(`Error cargando ${colName}`, 'error');
+        }
         loader.innerHTML = '';
     }
 };
@@ -672,7 +684,7 @@ window.saveFinalQuote = async () => {
     const total = subtotal * (1 + (parseInt(iva)/100));
     const colRef = collection(db, 'artifacts', appId, 'users', user.uid, 'quotes');
     
-    const docData = { ref, clientId: cid, status, iva, items: window.tempItems, subtotal, total, up: serverTimestamp() };
+    const docData = { ref, clientId: cid, status, iva, items: window.tempItems, subtotal, total, date: serverTimestamp() };
     try {
         if (window.editingId) await updateDoc(doc(colRef, window.editingId), docData);
         else await addDoc(colRef, docData);
@@ -755,7 +767,7 @@ window.openTemplateModal = () => {
     const listUi = document.getElementById('templates-list-ui');
     listUi.innerHTML = '';
     const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
-    getDocs(query(c)).then(s => {
+    getDocs(query(c, orderBy('up', 'desc'))).then(s => {
         window.data.templates = s.docs.map(d => ({id: d.id, ...d.data()}));
         listUi.innerHTML = window.data.templates.map(t => `
             <div class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded border dark:border-slate-700 text-xs font-bold">
@@ -763,7 +775,7 @@ window.openTemplateModal = () => {
                 <button onclick="window.delItem('templates','${t.id}',event); window.openTemplateModal();" class="text-red-400"><i data-lucide="trash" class="w-3 h-3"></i></button>
             </div>`).join('');
         lucide.createIcons();
-    });
+    }).catch(e => console.warn("Could not load templates with ordering.", e));
     document.getElementById('modal-template').classList.replace('hidden', 'flex');
 };
 
@@ -865,7 +877,7 @@ const generatePDF = (id) => {
     doc.setTextColor(mainTextColor);
     doc.text(q.ref.toUpperCase(), rightInfoBoxX, infoBoxY + 15);
 
-    let dateStr = q.up?.toDate ? q.up.toDate().toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES');
+    let dateStr = q.date?.toDate ? q.date.toDate().toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES');
     doc.text(dateStr, rightInfoBoxX, infoBoxY + 45);
 
     const tableData = q.items.map(it => [
