@@ -565,15 +565,42 @@ window.delItem = async (col, id) => {
     }
 };
 
-// Delegación de eventos global para todos los botones de eliminar (fase de captura)
+// Delegación de eventos global para todos los botones de eliminar y abrir modales
 document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-del-col][data-del-id]');
-    if (btn) {
+    // Primero comprobar si es un botón de eliminar
+    const delBtn = e.target.closest('[data-del-col][data-del-id]');
+    if (delBtn) {
+        e.stopImmediatePropagation();
         e.stopPropagation();
         e.preventDefault();
-        const col = btn.getAttribute('data-del-col');
-        const id = btn.getAttribute('data-del-id');
+        const col = delBtn.getAttribute('data-del-col');
+        const id = delBtn.getAttribute('data-del-id');
         window.delItem(col, id);
+        return;
+    }
+    // Luego comprobar si es una tarjeta para abrir modal
+    const openClient = e.target.closest('[data-open-client]');
+    if (openClient) {
+        window.openClientModal(openClient.getAttribute('data-open-client'));
+        return;
+    }
+    const openMaterial = e.target.closest('[data-open-material]');
+    if (openMaterial) {
+        window.openMaterialModal(openMaterial.getAttribute('data-open-material'));
+        return;
+    }
+    const openQuote = e.target.closest('[data-open-quote]');
+    if (openQuote) {
+        window.openQuoteModal(openQuote.getAttribute('data-open-quote'));
+        return;
+    }
+    const genPdf = e.target.closest('[data-gen-pdf]');
+    if (genPdf) {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+        e.preventDefault();
+        window.generatePDF(genPdf.getAttribute('data-gen-pdf'));
+        return;
     }
 }, true);
 
@@ -582,7 +609,7 @@ const renderCls = () => {
     const filtered = window.data.clients.filter(c => c.name.toLowerCase().includes(search));
     
     document.getElementById('clients-list').innerHTML = filtered.map(c => `
-        <div onclick="window.openClientModal('${c.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
+        <div data-open-client="${c.id}" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
             <div>
                 <b class="block uppercase">${c.name}</b>
                 <div class="flex gap-2 text-[10px] text-slate-400">
@@ -602,7 +629,7 @@ const renderMats = () => {
     const filtered = window.data.materials.filter(m => m.name.toLowerCase().includes(search));
     
     document.getElementById('materials-list').innerHTML = filtered.map(m => `
-        <div onclick="window.openMaterialModal('${m.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
+        <div data-open-material="${m.id}" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
             <div>
                 <b class="block">${m.name}</b>
                 <div class="flex gap-2 text-[10px] text-slate-400 mt-1">
@@ -633,7 +660,7 @@ const renderQts = () => {
         const darkColors = { pendiente: 'dark:bg-amber-500/10', aprobado: 'dark:bg-emerald-500/10', rechazado: 'dark:bg-red-500/10' };
         
         return `
-        <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400" onclick="window.openQuoteModal('${q.id}')">
+        <div data-open-quote="${q.id}" class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400">
             <div class="flex justify-between items-start">
                 <div>
                     <span class="text-xs font-black text-slate-400 tracking-wider">REF: ${q.ref}</span>
@@ -644,7 +671,7 @@ const renderQts = () => {
             <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
                 <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
                 <div class="flex gap-2">
-                    <button onclick="event.stopPropagation(); window.generatePDF('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
+                    <button data-gen-pdf="${q.id}" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
                     <button data-del-col="quotes" data-del-id="${q.id}" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>
             </div>
