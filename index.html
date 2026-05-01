@@ -7,6 +7,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
         tailwind.config = {
@@ -97,28 +98,65 @@
 </header>
 
 <main class="max-w-4xl mx-auto p-4">
-    <!-- FILTROS Y BUSCADORES -->
-    <div id="search-bar" class="mb-6 flex gap-2">
-        <div class="relative flex-1">
-            <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input id="main-search" oninput="window.applyFilters()" type="text" placeholder="Buscar en los elementos cargados..." class="w-full pl-11 pr-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none focus:ring-2 ring-blue-500">
+    <!-- FILTROS Y BUSCADORES (ahora es específico para cada vista) -->
+    <div id="search-and-filters-container">
+        <div id="search-bar" class="mb-6 flex gap-2">
+            <div class="relative flex-1">
+                <i data-lucide="search" class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="main-search" oninput="window.applyFilters()" type="text" placeholder="Buscar..." class="w-full pl-11 pr-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none focus:ring-2 ring-blue-500">
+            </div>
+            <select id="status-filter" onchange="window.applyFilters()" class="px-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none text-sm font-bold">
+                <option value="todos">Todos</option>
+                <option value="pendiente">Pendientes</option>
+                <option value="aprobado">Aprobados</option>
+                <option value="rechazado">Rechazados</option>
+            </select>
         </div>
-        <select id="status-filter" onchange="window.applyFilters()" class="px-4 py-3 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none text-sm font-bold">
-            <option value="todos">Todos</option>
-            <option value="pendiente">Pendientes</option>
-            <option value="aprobado">Aprobados</option>
-            <option value="rechazado">Rechazados</option>
-        </select>
     </div>
 
     <!-- VISTAS -->
-    <section id="view-quotes" class="space-y-4 fade-in">
+    <section id="view-dashboard" class="space-y-6 fade-in">
+        <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-extrabold">Panel de Resumen</h2>
+            <button onclick="window.openQuoteModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"><i data-lucide="plus"></i> Nuevo Proyecto</button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div class="bg-white dark:bg-darkCard p-4 rounded-xl shadow-sm border dark:border-slate-700">
+                <h4 class="text-sm font-bold text-slate-400 uppercase">Pendientes</h4>
+                <p id="db-pending-count" class="text-3xl font-black">0</p>
+            </div>
+            <div class="bg-white dark:bg-darkCard p-4 rounded-xl shadow-sm border dark:border-slate-700">
+                <h4 class="text-sm font-bold text-slate-400 uppercase">Facturación (Mes)</h4>
+                <p id="db-approved-val" class="text-3xl font-black">0€</p>
+            </div>
+            <div class="bg-white dark:bg-darkCard p-4 rounded-xl shadow-sm border dark:border-slate-700">
+                <h4 class="text-sm font-bold text-slate-400 uppercase">Beneficio (Mes)</h4>
+                <p id="db-profit-val" class="text-3xl font-black text-emerald-500">0€</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div class="md:col-span-2 bg-white dark:bg-darkCard p-6 rounded-xl shadow-sm border dark:border-slate-700">
+                <h3 class="font-bold mb-4">Distribución de Proyectos</h3>
+                <div class="relative mx-auto" style="max-width: 250px; max-height: 250px;">
+                    <canvas id="status-chart"></canvas>
+                </div>
+            </div>
+            <div class="md:col-span-3 bg-white dark:bg-darkCard p-6 rounded-xl shadow-sm border dark:border-slate-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold">Proyectos Recientes</h3>
+                    <button onclick="window.switchView('quotes')" class="text-sm font-bold text-blue-500 hover:underline">Ver todos</button>
+                </div>
+                <div id="db-recent-quotes" class="space-y-3"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-quotes" class="hidden space-y-4 fade-in">
         <div class="flex justify-between items-center">
             <h2 class="text-2xl font-extrabold">Proyectos</h2>
-            <div class="flex gap-2">
-                <button onclick="window.openTemplateModal()" class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-3 rounded-xl font-bold flex items-center gap-2 text-sm"><i data-lucide="layers" class="w-4 h-4"></i> Plantillas</button>
-                <button onclick="window.openQuoteModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"><i data-lucide="plus"></i> Nuevo</button>
-            </div>
+            <button onclick="window.openQuoteModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg"><i data-lucide="plus"></i> Nuevo</button>
         </div>
         <div id="quotes-list" class="grid gap-4"></div>
         <div id="quotes-loader" class="text-center"></div>
@@ -141,12 +179,38 @@
         <div id="clients-list" class="grid sm:grid-cols-2 gap-4"></div>
         <div id="clients-loader" class="text-center"></div>
     </section>
+    
+    <section id="view-client-details" class="hidden space-y-4 fade-in">
+        <div class="flex items-center gap-4 mb-4">
+            <button onclick="window.switchView('clients')" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg"><i data-lucide="arrow-left"></i></button>
+            <h2 class="text-2xl font-extrabold">Detalles del Cliente</h2>
+        </div>
+        <div class="bg-white dark:bg-darkCard p-6 rounded-2xl border dark:border-slate-700">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 id="cd-name" class="text-xl font-bold"></h3>
+                    <p id="cd-nif" class="text-sm text-slate-500"></p>
+                    <p id="cd-contact" class="text-sm text-slate-500 mt-1"></p>
+                    <p id="cd-address" class="text-sm text-slate-500 mt-1"></p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="cd-edit-btn" class="p-2 text-slate-500 hover:text-blue-500"><i data-lucide="edit"></i></button>
+                    <button id="cd-delete-btn" class="p-2 text-slate-500 hover:text-red-500"><i data-lucide="trash"></i></button>
+                </div>
+            </div>
+            <div class="mt-6 border-t dark:border-slate-700 pt-4">
+                <h4 class="font-bold mb-2">Proyectos Asociados</h4>
+                <div id="cd-quotes-list" class="space-y-2"></div>
+            </div>
+        </div>
+    </section>
+
 </main>
 
 <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-darkCard border-t border-slate-200 dark:border-slate-800 flex justify-around items-center h-20 z-40 shadow-lg">
-    <button onclick="window.switchView('quotes')" id="nav-quotes" class="flex-1 flex flex-col items-center justify-center active-tab h-full">
+    <button onclick="window.switchView('dashboard')" id="nav-dashboard" class="flex-1 flex flex-col items-center justify-center active-tab h-full">
         <i data-lucide="layout-grid" class="w-6 h-6 mb-1"></i>
-        <span class="text-[10px] font-bold uppercase">Proyectos</span>
+        <span class="text-[10px] font-bold uppercase">Panel</span>
     </button>
     <button onclick="window.switchView('materials')" id="nav-materials" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">
         <i data-lucide="package" class="w-6 h-6 mb-1"></i>
@@ -156,6 +220,7 @@
         <i data-lucide="users" class="w-6 h-6 mb-1"></i>
         <span class="text-[10px] font-bold uppercase">Clientes</span>
     </button>
+    <button onclick="window.switchView('quotes')" id="nav-quotes" class="hidden"></button> <!-- Helper for navigation logic -->
 </nav>
 
 <!-- MODAL CLIENTE -->
@@ -254,6 +319,9 @@
                     </div>
                 </div>
             </div>
+
+            <textarea id="q-footer-text" placeholder="Notas al pie del presupuesto (ej: Validez 30 días)" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 rounded-xl text-sm"></textarea>
+
         </div>
         <div class="p-6 border-t dark:border-slate-700">
             <button id="q-save-btn" onclick="window.saveFinalQuote()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl text-lg uppercase tracking-wider">Guardar Presupuesto</button>
@@ -302,7 +370,825 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp, getDocs, query, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+import { getFirestore, collection, doc, addDoc, deleteDoc, updateDoc, serverTimestamp, getDocs, query, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBuX9O3WBR5zX_L-WYdRiwirBl50aUFzlg",
+    authDomain: "electriquote-b92c3.firebaseapp.com",
+    projectId: "electriquote-b92c3",
+    storageBucket: "electriquote-b92c3.firebasestorage.app",
+    messagingSenderId: "1050154424016",
+    appId: "1:1050154424016:web:10e5250c9b78c17bb7b0d5"
+};
+
+const appId = 'electri-pro-final'; 
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+setPersistence(auth, browserLocalPersistence).catch(console.error);
+
+let user = null;
+const PAGE_SIZE = 10;
+let statusChart = null; // Global chart instance
+window.data = { clients: [], materials: [], quotes: [], templates: [] };
+window.lastDoc = { clients: null, materials: null, quotes: null };
+window.tempItems = [];
+window.editingId = null;
+
+// --- UI & Utility Functions ---
+
+const loadScript = (url) => {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${url}"]`)) {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+};
+
+window.showToast = (message, type = 'success') => {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+};
+
+const toggleButtonLoading = (btnId, isLoading) => {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    if (isLoading) {
+        btn.classList.add('btn-loading');
+        btn.disabled = true;
+    } else {
+        btn.classList.remove('btn-loading');
+        btn.disabled = false;
+    }
+};
+
+window.toggleDarkMode = () => {
+    document.documentElement.classList.toggle('dark');
+    const isDark = document.documentElement.classList.contains('dark');
+    document.getElementById('theme-icon').setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+    lucide.createIcons();
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+};
+
+if (localStorage.getItem('theme') === 'dark') {
+    document.documentElement.classList.add('dark');
+}
+
+window.applyFilters = () => {
+    const currentView = document.querySelector('main section:not(.hidden)').id.replace('view-', '');
+    if (window.data[currentView]) {
+        renderData(window.data[currentView], currentView, { append: false });
+    }
+};
+
+window.processAuth = async () => {
+    const errEl = document.getElementById('auth-error-msg');
+    const email = document.getElementById('usr-fld').value.trim();
+    const pass = document.getElementById('key-fld').value.trim();
+    
+    if (!email || !pass) { errEl.innerText = "Email y contraseña requeridos"; errEl.classList.remove('hidden'); return; }
+    errEl.classList.add('hidden');
+
+    toggleButtonLoading('auth-btn', true);
+    try {
+        await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) {
+        errEl.innerText = "Credenciales incorrectas";
+        errEl.classList.remove('hidden');
+    } finally {
+        toggleButtonLoading('auth-btn', false);
+    }
+};
+
+window.doLogout = async () => { 
+    await signOut(auth); 
+    window.location.reload();
+};
+
+window.switchView = (v) => {
+    ['dashboard', 'quotes', 'materials', 'clients', 'client-details'].forEach(x => {
+        document.getElementById('view-' + x)?.classList.add('hidden');
+    });
+    ['dashboard', 'materials', 'clients', 'quotes'].forEach(x => {
+        document.getElementById('nav-' + x)?.classList.remove('active-tab', 'text-slate-400');
+        document.getElementById('nav-' + x)?.classList.add('text-slate-400');
+    });
+
+    const viewToShow = document.getElementById('view-' + v);
+    const navBtn = document.getElementById('nav-' + v);
+    
+    if (viewToShow) viewToShow.classList.remove('hidden');
+    if (navBtn) {
+        navBtn.classList.add('active-tab');
+        navBtn.classList.remove('text-slate-400');
+    }
+
+    // Show/hide search/filter bar based on view
+    const searchContainer = document.getElementById('search-and-filters-container');
+    const statusFilter = document.getElementById('status-filter');
+    const mainSearch = document.getElementById('main-search');
+
+    if (['quotes', 'materials', 'clients'].includes(v)) {
+        searchContainer.style.display = 'flex';
+        statusFilter.style.display = (v === 'quotes') ? 'block' : 'none';
+        mainSearch.placeholder = `Buscar en ${v}...`;
+    } else {
+        searchContainer.style.display = 'none';
+    }
+};
+
+window.closeAllModals = () => {
+    document.querySelectorAll('[id^="modal-"]').forEach(m => {
+        m.classList.remove('flex'); m.classList.add('hidden');
+    });
+    window.editingId = null;
+};
+
+// --- Data Fetching & Rendering ---
+
+const fetchAllData = async () => {
+    if (!user) return;
+    
+    const collectionsToFetch = ['clients', 'materials', 'quotes'];
+    const loader = document.getElementById('quotes-loader'); // Use a general loader
+    loader.innerHTML = '<div class="h-12 rounded-lg skeleton-loading w-32 mx-auto"></div>';
+
+    try {
+        for (const colName of collectionsToFetch) {
+            const colRef = collection(db, 'artifacts', appId, 'users', user.uid, colName);
+            const snapshot = await getDocs(query(colRef));
+            window.data[colName] = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+
+        // Initial Render
+        renderDashboard();
+        renderData(window.data.quotes, 'quotes', { append: false });
+        renderData(window.data.clients, 'clients', { append: false });
+        renderData(window.data.materials, 'materials', { append: false });
+
+    } catch (err) {
+        console.error("Error fetching all data:", err);
+        showToast("Error al cargar los datos iniciales.", 'error');
+    } finally {
+        loader.innerHTML = '';
+    }
+};
+
+
+const renderData = (items, colName, options = {}) => {
+    const listEl = document.getElementById(`${colName}-list`);
+    if (!listEl) return;
+    
+    const search = document.getElementById('main-search').value.toLowerCase();
+    const statusFilter = colName === 'quotes' ? document.getElementById('status-filter').value : 'todos';
+
+    const filteredItems = items.filter(item => {
+        let matchesSearch = true;
+        let matchesStatus = true;
+
+        if (search) {
+            const name = item.name || item.ref || '';
+            matchesSearch = name.toLowerCase().includes(search);
+        }
+        if (colName === 'quotes' && statusFilter !== 'todos') {
+            matchesStatus = item.status === statusFilter;
+        }
+        return matchesSearch && matchesStatus;
+    });
+
+    let html = '';
+    switch (colName) {
+        case 'clients':
+            html = filteredItems.map(c => `
+                <div onclick="window.showClientDetails('${c.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
+                    <div><b class="block uppercase">${c.name}</b><div class="flex gap-2 text-[10px] text-slate-400"><span>${c.phone || 'Sin teléfono'}</span><span>•</span><span>${c.nif || 'Sin NIF'}</span></div></div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i>
+                </div>`).join('');
+            break;
+        case 'materials':
+            html = filteredItems.map(m => `
+                <div onclick="window.openMaterialModal('${m.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
+                    <div><b class="block">${m.name}</b><div class="flex gap-2 text-[10px] text-slate-400 mt-1"><span>Venta: ${(m.price || 0).toFixed(2)}€</span><span>•</span><span>Costo: ${(m.cost || 0).toFixed(2)}€</span></div></div>
+                    <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>`).join('');
+            break;
+        case 'quotes':
+            html = filteredItems.map(q => {
+                const client = window.data.clients.find(c => c.id === q.clientId) || {name: 'Cliente Eliminado'};
+                const colors = { pendiente: 'text-amber-500 bg-amber-50', aprobado: 'text-emerald-500 bg-emerald-50', rechazado: 'text-red-500 bg-red-50' };
+                const darkColors = { pendiente: 'dark:bg-amber-500/10', aprobado: 'dark:bg-emerald-500/10', rechazado: 'dark:bg-red-500/10' };
+                return `
+                <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-700 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-blue-400" onclick="window.openQuoteModal('${q.id}')">
+                    <div class="flex justify-between items-start">
+                        <div><span class="text-xs font-black text-slate-400 tracking-wider">REF: ${q.ref}</span><h4 class="font-bold text-lg leading-tight uppercase">${client.name}</h4></div>
+                        <span class="text-[10px] font-black uppercase px-2 py-1 rounded-md ${colors[q.status || 'pendiente']} ${darkColors[q.status || 'pendiente']}">${q.status || 'Pendiente'}</span>
+                    </div>
+                    <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
+                        <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
+                        <div class="flex gap-2"><button onclick="window.generatePDFWrapper('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button><button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
+                    </div>
+                </div>`;
+            }).join('');
+            break;
+    }
+    
+    listEl.innerHTML = html || `
+        <div class="text-center col-span-full p-8 bg-slate-100 dark:bg-slate-800/50 rounded-2xl">
+            <i data-lucide="search" class="w-12 h-12 mx-auto text-slate-400 mb-4"></i>
+            <h3 class="font-bold text-lg">No se encontraron resultados</h3>
+            <p class="text-sm text-slate-500">Prueba a cambiar los filtros o el término de búsqueda.</p>
+        </div>`;
+
+    lucide.createIcons();
+};
+
+const renderDashboard = () => {
+    const quotes = window.data.quotes;
+    
+    // Calculate stats
+    const pendingCount = quotes.filter(q => q.status === 'pendiente').length;
+    
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const approvedThisMonth = quotes.filter(q => {
+        const qDate = q.date?.toDate ? q.date.toDate() : new Date(0);
+        return q.status === 'aprobado' && qDate >= firstDayOfMonth;
+    });
+
+    const approvedValue = approvedThisMonth.reduce((sum, q) => sum + (q.total || 0), 0);
+    
+    const calculateProfit = (quote) => (quote.subtotal || 0) - (quote.items.reduce((sum, item) => sum + (item.totalCost || 0), 0));
+    const approvedProfit = approvedThisMonth.reduce((sum, q) => sum + calculateProfit(q), 0);
+    
+    // Render stats
+    document.getElementById('db-pending-count').textContent = pendingCount;
+    document.getElementById('db-approved-val').textContent = `${approvedValue.toFixed(2)}€`;
+    document.getElementById('db-profit-val').textContent = `${approvedProfit.toFixed(2)}€`;
+    
+    // Render chart
+    const statusCounts = quotes.reduce((acc, q) => {
+        acc[q.status || 'pendiente'] = (acc[q.status || 'pendiente'] || 0) + 1;
+        return acc;
+    }, {});
+    
+    const ctx = document.getElementById('status-chart').getContext('2d');
+    const chartData = {
+        labels: ['Pendientes', 'Aprobados', 'Rechazados'],
+        datasets: [{
+            data: [
+                statusCounts.pendiente || 0,
+                statusCounts.aprobado || 0,
+                statusCounts.rechazado || 0
+            ],
+            backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
+            borderWidth: 0,
+        }]
+    };
+
+    if(statusChart) statusChart.destroy();
+    statusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: chartData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20 } }
+            }
+        }
+    });
+
+    // Render recent quotes
+    const recentQuotesList = document.getElementById('db-recent-quotes');
+    const sortedQuotes = [...quotes].sort((a, b) => (b.date?.toDate ? b.date.toDate() : 0) - (a.date?.toDate ? a.date.toDate() : 0));
+    recentQuotesList.innerHTML = sortedQuotes.slice(0, 5).map(q => {
+        const client = window.data.clients.find(c => c.id === q.clientId) || {name: '-'};
+        return `<div class="flex justify-between items-center text-sm p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer" onclick="openQuoteModal('${q.id}')">
+                    <div>
+                        <b class="uppercase">${q.ref}</b>
+                        <span class="text-slate-500 block text-xs">${client.name}</span>
+                    </div>
+                    <span class="font-bold">${(q.total || 0).toFixed(2)}€</span>
+                </div>`
+    }).join('');
+};
+
+
+// --- CRUD Functions ---
+
+window.openClientModal = (id = null) => {
+    window.editingId = id;
+    const item = id ? window.data.clients.find(x => x.id === id) : null;
+    document.getElementById('cl-name').value = item ? item.name : '';
+    document.getElementById('cl-phone').value = item ? item.phone : '';
+    document.getElementById('cl-nif').value = item && item.nif ? item.nif : '';
+    document.getElementById('cl-address').value = item ? item.address : '';
+    document.getElementById('cl-city').value = item && item.city ? item.city : '';
+    document.getElementById('client-title-modal').innerText = id ? 'Editar Cliente' : 'Nuevo Cliente';
+    document.getElementById('modal-client').classList.replace('hidden', 'flex');
+};
+
+window.saveClientData = async () => {
+    const btnId = 'cl-save-btn';
+    toggleButtonLoading(btnId, true);
+    const d = { 
+        name: document.getElementById('cl-name').value.trim(), 
+        phone: document.getElementById('cl-phone').value.trim(), 
+        nif: document.getElementById('cl-nif').value.trim(),
+        address: document.getElementById('cl-address').value.trim(), 
+        city: document.getElementById('cl-city').value.trim(),
+        up: serverTimestamp() 
+    };
+    if(!d.name) {
+        showToast('El nombre es obligatorio', 'error');
+        toggleButtonLoading(btnId, false);
+        return;
+    }
+    const c = collection(db, 'artifacts', appId, 'users', user.uid, 'clients');
+    try {
+        if(window.editingId) {
+            await updateDoc(doc(c, window.editingId), d);
+            const index = window.data.clients.findIndex(item => item.id === window.editingId);
+            if(index > -1) window.data.clients[index] = {id: window.editingId, ...d};
+        }
+        else {
+             const docRef = await addDoc(c, d);
+             window.data.clients.push({ id: docRef.id, ...d});
+        }
+        window.data.clients.sort((a,b) => a.name.localeCompare(b.name));
+        showToast('Cliente guardado');
+        renderData(window.data.clients, 'clients', { append: false });
+        if(document.getElementById('view-client-details').style.display !== 'none') {
+             showClientDetails(window.editingId); // Refresh details view
+        }
+    } catch(e) { showToast('Error al guardar', 'error'); console.error(e); }
+    finally {
+        toggleButtonLoading(btnId, false);
+        window.closeAllModals();
+    }
+};
+
+window.openMaterialModal = (id = null) => {
+    window.editingId = id;
+    const item = id ? window.data.materials.find(x => x.id === id) : null;
+    document.getElementById('mt-name').value = item ? item.name : '';
+    document.getElementById('mt-price').value = item ? item.price : '';
+    document.getElementById('mt-cost').value = item && item.cost ? item.cost : '';
+    document.getElementById('mat-title-modal').innerText = id ? 'Editar Concepto' : 'Nuevo Concepto';
+    document.getElementById('modal-material').classList.replace('hidden', 'flex');
+};
+
+window.saveMaterialData = async () => {
+    const btnId = 'mt-save-btn';
+    toggleButtonLoading(btnId, true);
+    const price = parseFloat(document.getElementById('mt-price').value) || 0;
+    const cost = parseFloat(document.getElementById('mt-cost').value) || 0; 
+    
+    if(price < 0 || cost < 0) { showToast("Los precios no pueden ser negativos", 'error'); toggleButtonLoading(btnId, false); return; }
+    
+    const d = { 
+        name: document.getElementById('mt-name').value.trim(), 
+        price: price, 
+        cost: cost,
+        up: serverTimestamp() 
+    };
+    if(!d.name) { showToast('El nombre es obligatorio', 'error'); toggleButtonLoading(btnId, false); return; }
+
+    const c = collection(db, 'artifacts', appId, 'users', user.uid, 'materials');
+    try {
+        if(window.editingId) {
+            await updateDoc(doc(c, window.editingId), d);
+            const index = window.data.materials.findIndex(item => item.id === window.editingId);
+            if(index > -1) window.data.materials[index] = {id: window.editingId, ...d};
+        } else {
+            const docRef = await addDoc(c, d);
+            window.data.materials.push({ id: docRef.id, ...d});
+        }
+        window.data.materials.sort((a,b) => a.name.localeCompare(b.name));
+        renderData(window.data.materials, 'materials', { append: false });
+        showToast('Concepto guardado');
+    } catch(e) { showToast('Error al guardar', 'error'); console.error(e); }
+    finally {
+        toggleButtonLoading(btnId, false);
+        window.closeAllModals();
+    }
+};
+
+window.openQuoteModal = (id = null) => {
+    if(window.data.clients.length === 0) { showToast("Primero crea un cliente.", 'error'); return; }
+    window.editingId = id;
+    document.getElementById('q-cl-select').innerHTML = window.data.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    document.getElementById('q-mt-select').innerHTML = window.data.materials.map(m => `<option value="${m.id}">${m.name} (${(m.price || 0).toFixed(2)}€)</option>`).join('');
+    
+    const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
+    getDocs(query(c)).then(s => {
+        window.data.templates = s.docs.map(d => ({id: d.id, ...d.data()}));
+        document.getElementById('q-tp-select').innerHTML = '<option value="">Cargar Pack...</option>' + window.data.templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    });
+
+    if(id) {
+        const q = window.data.quotes.find(x => x.id === id);
+        document.getElementById('q-ref').value = q.ref;
+        document.getElementById('q-cl-select').value = q.clientId;
+        document.getElementById('q-status').value = q.status || 'pendiente';
+        document.getElementById('q-iva').value = q.iva || "21";
+        document.getElementById('q-footer-text').value = q.footerText || "";
+        window.tempItems = [...q.items];
+    } else {
+        window.tempItems = [];
+        document.getElementById('q-ref').value = "";
+        document.getElementById('q-iva').value = "21";
+        document.getElementById('q-footer-text').value = "";
+    }
+    window.renderQuoteList();
+    document.getElementById('modal-quote').classList.replace('hidden', 'flex');
+};
+
+window.saveFinalQuote = async () => {
+    const btnId = 'q-save-btn';
+    toggleButtonLoading(btnId, true);
+    const ref = document.getElementById('q-ref').value;
+    const cid = document.getElementById('q-cl-select').value;
+    const status = document.getElementById('q-status').value;
+    const iva = document.getElementById('q-iva').value;
+    const footerText = document.getElementById('q-footer-text').value.trim();
+    if(!ref || window.tempItems.length === 0) {
+        showToast('La referencia y los conceptos son obligatorios', 'error');
+        toggleButtonLoading(btnId, false);
+        return;
+    }
+    
+    const subtotal = window.tempItems.reduce((a,b)=>a+b.sub,0);
+    const total = subtotal * (1 + (parseInt(iva)/100));
+    const colRef = collection(db, 'artifacts', appId, 'users', user.uid, 'quotes');
+    
+    const docData = { ref, clientId: cid, status, iva, footerText, items: window.tempItems, subtotal, total, date: serverTimestamp() };
+    try {
+        if (window.editingId) {
+            await updateDoc(doc(colRef, window.editingId), docData);
+            const index = window.data.quotes.findIndex(q => q.id === window.editingId);
+            // Firestore timestamp won't be available immediately, so keep original date for sorting
+            const originalDate = window.data.quotes[index].date;
+            if (index > -1) window.data.quotes[index] = {id: window.editingId, ...docData, date: originalDate };
+        } else {
+            const docRef = await addDoc(colRef, docData);
+            window.data.quotes.push({id: docRef.id, ...docData, date: new Date()}); // Use JS date for immediate sorting
+        }
+        renderDashboard();
+        renderData(window.data.quotes, 'quotes');
+        showToast('Presupuesto guardado');
+
+    } catch (e) { showToast('Error al guardar', 'error'); console.error(e); }
+    finally {
+        toggleButtonLoading(btnId, false);
+        window.closeAllModals();
+    }
+};
+
+window.delItem = async (col, id, e) => {
+    if(e) e.stopPropagation();
+    if(confirm("¿Seguro que quieres eliminar este elemento?")) {
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, col, id));
+            window.data[col] = window.data[col].filter(item => item.id !== id);
+            
+            showToast("Elemento eliminado");
+
+            // Refresh appropriate view
+            if(col === 'clients' && !document.getElementById('view-client-details').classList.contains('hidden')) {
+                switchView('clients');
+            } else {
+                renderData(window.data[col], col);
+            }
+            if(col === 'quotes') renderDashboard();
+            
+        } catch (err) {
+            console.error("Error eliminando:", err);
+            showToast(`Error al eliminar: ${err.message}`, 'error');
+        }
+    }
+};
+
+window.showClientDetails = (clientId) => {
+    const client = window.data.clients.find(c => c.id === clientId);
+    if (!client) {
+        showToast('Cliente no encontrado', 'error');
+        return;
+    }
+
+    // Populate details
+    document.getElementById('cd-name').textContent = client.name;
+    document.getElementById('cd-nif').textContent = `NIF/CIF: ${client.nif || '-'}`;
+    document.getElementById('cd-contact').textContent = `Tel: ${client.phone || '-'}`;
+    document.getElementById('cd-address').textContent = `${client.address || '-'} (${client.city || '-'})`;
+
+    // Setup buttons
+    document.getElementById('cd-edit-btn').onclick = () => openClientModal(clientId);
+    document.getElementById('cd-delete-btn').onclick = () => delItem('clients', clientId, null);
+
+    // Filter and display quotes
+    const quotesForClient = window.data.quotes.filter(q => q.clientId === clientId);
+    const quotesListEl = document.getElementById('cd-quotes-list');
+    quotesListEl.innerHTML = quotesForClient.length > 0 ? quotesForClient.map(q => `
+        <div class="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 cursor-pointer" onclick="openQuoteModal('${q.id}')">
+            <div>
+                <b class="uppercase">${q.ref}</b>
+                <span class="text-slate-500 block text-xs">${q.date?.toDate ? q.date.toDate().toLocaleDateString() : '-'}</span>
+            </div>
+            <b>${(q.total || 0).toFixed(2)}€</b>
+        </div>
+    `).join('') : '<p class="text-sm text-slate-500 text-center p-4">Este cliente no tiene proyectos.</p>';
+
+    // Show the view
+    switchView('client-details');
+};
+
+
+// --- Quote Item Management ---
+window.addItemToQuote = () => {
+    const mid = document.getElementById('q-mt-select').value;
+    const qty = parseFloat(document.getElementById('q-mt-qty').value) || 1;
+    const m = window.data.materials.find(x => x.id === mid);
+    if(!m || qty <= 0) return;
+    // This spread operator (...) creates a shallow copy, "freezing" the price and cost at this moment.
+    window.tempItems.push({...m, qty, sub: m.price * qty, totalCost: (m.cost || 0) * qty});
+    window.renderQuoteList();
+};
+
+window.renderQuoteList = () => {
+    const list = document.getElementById('q-items-list');
+    const ivaPerc = parseInt(document.getElementById('q-iva').value);
+    let subtotal = 0;
+    let totalCost = 0;
+    
+    list.innerHTML = window.tempItems.map((it, i) => {
+        subtotal += it.sub;
+        totalCost += (it.totalCost || 0); 
+        return `<li class="flex justify-between p-2 bg-white dark:bg-slate-700 rounded border dark:border-slate-600 text-sm">
+            <span>${it.qty} x ${it.name}</span>
+            <div class="flex gap-2 items-center"><b>${it.sub.toFixed(2)}€</b><button onclick="window.removeTempItem(${i})" class="text-red-400"><i data-lucide="minus-circle" class="w-4 h-4"></i></button></div>
+        </li>`;
+    }).join('');
+    
+    const ivaVal = subtotal * (ivaPerc / 100);
+    const total = subtotal + ivaVal;
+    const profit = subtotal - totalCost;
+
+    document.getElementById('q-subtotal-val').innerText = subtotal.toFixed(2) + " €";
+    
+    const ivaRow = document.getElementById('q-iva-row');
+    if(ivaPerc > 0) {
+        ivaRow.classList.remove('hidden');
+        document.getElementById('q-iva-val').innerText = ivaVal.toFixed(2) + " €";
+    } else {
+        ivaRow.classList.add('hidden');
+    }
+
+    document.getElementById('q-total-val').innerText = total.toFixed(2) + " €";
+    document.getElementById('q-profit-val').innerText = profit.toFixed(2) + " €";
+    
+    lucide.createIcons();
+};
+
+window.removeTempItem = (index) => {
+    window.tempItems.splice(index, 1);
+    window.renderQuoteList();
+};
+
+// --- Template Management ---
+window.openTemplateModal = () => {
+    const listUi = document.getElementById('templates-list-ui');
+    listUi.innerHTML = '';
+    const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
+    getDocs(query(c)).then(s => {
+        window.data.templates = s.docs.map(d => ({id: d.id, ...d.data()}));
+        listUi.innerHTML = window.data.templates.map(t => `
+            <div class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded border dark:border-slate-700 text-xs font-bold">
+                <span>${t.name}</span>
+                <button onclick="window.delItem('templates','${t.id}',event); window.openTemplateModal();" class="text-red-400"><i data-lucide="trash" class="w-3 h-3"></i></button>
+            </div>`).join('');
+        lucide.createIcons();
+    }).catch(e => console.warn("Could not load templates.", e));
+    document.getElementById('modal-template').classList.replace('hidden', 'flex');
+};
+
+window.saveCurrentAsTemplate = async () => {
+    const btnId = 'tp-save-btn';
+    toggleButtonLoading(btnId, true);
+    const name = document.getElementById('tp-name').value.trim();
+    if(!name || window.tempItems.length === 0) { 
+        showToast("Se necesita un nombre y al menos un concepto", 'error'); 
+        toggleButtonLoading(btnId, false);
+        return; 
+    }
+    const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
+    try {
+        await addDoc(c, { name, items: window.tempItems, up: serverTimestamp() });
+        document.getElementById('tp-name').value = "";
+        showToast("Plantilla guardada");
+        window.openTemplateModal(); // Refresh list
+    } catch(e) { showToast('Error al guardar plantilla', 'error'); console.error(e); }
+    finally {
+        toggleButtonLoading(btnId, false);
+    }
+};
+
+window.addTemplateItemsToQuote = () => {
+    const tid = document.getElementById('q-tp-select').value;
+    if(!tid) return;
+    const template = window.data.templates.find(t => t.id === tid);
+    if(template) {
+        window.tempItems = [...window.tempItems, ...template.items];
+        window.renderQuoteList();
+        showToast(`Pack '${template.name}' cargado`);
+    }
+};
+
+// --- PDF Generation (Lazy Loaded) ---
+window.generatePDFWrapper = async (id, event) => {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    btn.classList.add('btn-loading');
+
+    try {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js');
+        generatePDF(id); // Call the actual generator
+    } catch (error) {
+        console.error("Failed to load PDF scripts", error);
+        showToast("Error al cargar librerías PDF", "error");
+    } finally {
+        btn.classList.remove('btn-loading');
+    }
+};
+
+const generatePDF = (id) => {
+    const q = window.data.quotes.find(x => x.id === id);
+    if (!q) { showToast("Presupuesto no encontrado.", 'error'); return; }
+    const client = window.data.clients.find(c => c.id === q.clientId) || {};
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'pt', 'a4');
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 40;
+    const mainTextColor = '#333333';
+    const lightTextColor = '#777777';
+    const accentColor = '#4A90E2';
+
+    doc.setFont('helvetica');
+    doc.setTextColor(mainTextColor);
+    doc.setFontSize(26);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(accentColor);
+    doc.text("PRESUPUESTO", pageWidth - margin, 60, { align: 'right' });
+
+    const infoBoxY = 130;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(lightTextColor);
+    doc.text("CLIENTE:", margin, infoBoxY);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(mainTextColor);
+    let clientAddressY = infoBoxY + 15;
+    doc.text(client.name || 'Sin Nombre', margin, clientAddressY);
+    if (client.address) { clientAddressY += 15; doc.text(client.address, margin, clientAddressY); }
+    if (client.city) { clientAddressY += 15; doc.text(client.city, margin, clientAddressY); }
+    if (client.nif) { clientAddressY += 15; doc.text("NIF/CIF: " + client.nif, margin, clientAddressY); }
+
+    const rightInfoBoxX = pageWidth / 2 + 10;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(lightTextColor);
+    doc.text("REFERENCIA", rightInfoBoxX, infoBoxY);
+    doc.text("FECHA", rightInfoBoxX, infoBoxY + 30);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(mainTextColor);
+    doc.text(q.ref.toUpperCase(), rightInfoBoxX, infoBoxY + 15);
+
+    let dateStr = q.date?.toDate ? q.date.toDate().toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES');
+    doc.text(dateStr, rightInfoBoxX, infoBoxY + 45);
+
+    const tableData = q.items.map(it => [
+        { content: it.name }, { content: it.qty.toString() },
+        { content: (it.price || 0).toFixed(2) + " €" }, { content: (it.sub || 0).toFixed(2) + " €" }
+    ]);
+
+    doc.autoTable({
+        startY: clientAddressY + 40,
+        head: [['Concepto', 'Cant.', 'Precio Unitario', 'Total']],
+        body: tableData,
+        theme: 'grid',
+        styles: { font: 'helvetica', fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+        headStyles: { fillColor: '#F4F4F4', textColor: mainTextColor, fontStyle: 'bold', halign: 'left' },
+        columnStyles: {
+            1: { halign: 'center', cellWidth: 50 },
+            2: { halign: 'right', cellWidth: 80 },
+            3: { halign: 'right', cellWidth: 80 },
+        },
+        didDrawPage: (data) => {
+            doc.setFontSize(8);
+            doc.setTextColor(lightTextColor);
+            doc.text("Página " + data.pageNumber + " de " + doc.internal.getNumberOfPages(), pageWidth / 2, pageHeight - 20, { align: 'center' });
+        }
+    });
+
+    let finalY = doc.lastAutoTable.finalY + 20;
+    const totalsX = pageWidth - margin - 150;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(mainTextColor);
+    doc.text("Subtotal:", totalsX, finalY);
+    doc.text((q.subtotal || 0).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
+
+    const ivaPerc = parseInt(q.iva || 0);
+    if (ivaPerc > 0) {
+        finalY += 20;
+        doc.text(`IVA (${ivaPerc}%):`, totalsX, finalY);
+        doc.text((q.subtotal * (ivaPerc / 100)).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
+    }
+
+    finalY += 25;
+    doc.setLineWidth(1.5);
+    doc.setDrawColor(mainTextColor);
+    doc.line(totalsX, finalY, pageWidth - margin, finalY);
+    finalY += 15;
+    
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(accentColor);
+    doc.text("TOTAL:", totalsX, finalY);
+    doc.text((q.total || 0).toFixed(2) + " €", pageWidth - margin, finalY, { align: 'right' });
+    
+    // Add footer text if it exists
+    if (q.footerText) {
+        finalY = pageHeight - margin - 20; // Position at the bottom
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(lightTextColor);
+        doc.text(q.footerText, margin, finalY, { maxWidth: pageWidth - (margin * 2) });
+    }
+
+    const pdfDataUri = doc.output('datauristring');
+    document.getElementById('pdf-frame').src = pdfDataUri;
+    document.getElementById('btn-dl-pdf').onclick = () => doc.save(`Presupuesto_${q.ref}.pdf`);
+    
+    const pdfBlob = doc.output('blob');
+    const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+    document.getElementById('btn-open-pdf').onclick = () => {
+        window.open(pdfBlobUrl, '_blank');
+    };
+
+    if(window.innerWidth < 768) {
+        document.getElementById('pdf-frame').classList.add('hidden');
+        document.getElementById('pdf-mobile-fallback').classList.replace('hidden', 'flex');
+    } else {
+        document.getElementById('pdf-frame').classList.remove('hidden');
+        document.getElementById('pdf-mobile-fallback').classList.replace('flex', 'hidden');
+    }
+
+    document.getElementById('modal-pdf').classList.replace('hidden', 'flex');
+};
+
+
+// --- Auth State ---
+
+onAuthStateChanged(auth, (u) => {
+    if (u) {
+        user = u;
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('status-dot').classList.replace('bg-slate-300', 'bg-emerald-500');
+        
+        switchView('dashboard'); // Start at dashboard
+        fetchAllData();
+
+    } else {
+        user = null;
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('status-dot').classList.replace('bg-emerald-500', 'bg-slate-300');
+    }
+});
+</script>
 
 const firebaseConfig = {
     apiKey: "AIzaSyBuX9O3WBR5zX_L-WYdRiwirBl50aUFzlg",
