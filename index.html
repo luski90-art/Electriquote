@@ -618,10 +618,19 @@ window.saveMaterialData = async () => {
 
     const c = collection(db, 'artifacts', appId, 'users', user.uid, 'materials');
     try {
-        if(window.editingId) await updateDoc(doc(c, window.editingId), d);
-        else await addDoc(c, d);
-        showToast('Concepto guardado');
-        fetchMore('materials'); // Refresh
+        if(window.editingId) {
+            await updateDoc(doc(c, window.editingId), d);
+            showToast('Concepto guardado');
+            fetchMore('materials'); // For an update, re-fetching is acceptable
+        } else {
+            const docRef = await addDoc(c, d);
+            // FIX: Instead of calling fetchMore, add the new item to the local array and re-render.
+            const newMaterialForUI = { id: docRef.id, name: d.name, price: d.price, cost: d.cost };
+            window.data.materials.push(newMaterialForUI);
+            window.data.materials.sort((a,b) => a.name.localeCompare(b.name));
+            renderData(window.data.materials, 'materials', { append: false });
+            showToast('Concepto guardado');
+        }
     } catch(e) { showToast('Error al guardar', 'error'); console.error(e); }
     finally {
         toggleButtonLoading(btnId, false);
