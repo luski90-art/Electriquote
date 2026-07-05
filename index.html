@@ -1017,7 +1017,7 @@ window.renderQuoteList = () => {
     document.getElementById('q-total-val').innerText = total.toFixed(2) + " €";
     document.getElementById('q-profit-val').innerText = profit.toFixed(2) + " €";
     
-    // SEMAFORIZACIÓN DE BENEFICIO ESTIMADO
+    // SEMAFORIZACIÓN DE MARGEN DE BENEFICIO
     const profitPerc = subtotal > 0 ? (profit / subtotal) * 100 : 0;
     const badge = document.getElementById('q-profit-badge');
     badge.innerText = profitPerc.toFixed(0) + "%";
