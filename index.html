@@ -71,6 +71,11 @@
             <input id="key-fld" type="password" autocomplete="off" placeholder="Contraseña" class="w-full p-4 border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl outline-none focus:ring-2 ring-slate-900 transition-all">
         </div>
         
+        <!-- Opción para restablecer la contraseña si se olvida -->
+        <button type="button" onclick="window.resetPassword()" class="text-xs text-blue-500 hover:text-blue-600 hover:underline mt-3 block mx-auto font-semibold transition-all">
+            ¿Olvidaste tu contraseña? Restablecer
+        </button>
+        
         <p id="auth-error-msg" class="text-red-500 text-xs mt-4 font-bold hidden"></p>
 
         <div class="flex flex-col gap-3 mt-6">
@@ -301,7 +306,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, onSnapshot, deleteDoc, updateDoc, serverTimestamp, getDocs, query, orderBy, limit, startAfter } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -404,6 +409,28 @@ window.processAuth = async () => {
     }
 };
 
+// Función para enviar correo de restablecimiento de contraseña
+window.resetPassword = async () => {
+    const errEl = document.getElementById('auth-error-msg');
+    const email = document.getElementById('usr-fld').value.trim();
+
+    if (!email) {
+        errEl.innerText = "Por favor, escribe tu correo electrónico en el campo superior antes de pulsar en restablecer.";
+        errEl.classList.remove('hidden');
+        return;
+    }
+    errEl.classList.add('hidden');
+
+    try {
+        await sendPasswordResetEmail(auth, email);
+        showToast("Enlace de restauración enviado a tu email", "success");
+    } catch (e) {
+        console.error(e);
+        errEl.innerText = "Error: Asegúrate de que el correo sea válido o esté registrado.";
+        errEl.classList.remove('hidden');
+    }
+};
+
 window.doLogout = async () => { 
     await signOut(auth); 
     window.location.reload();
@@ -436,17 +463,21 @@ const fetchMore = async (colName, append = false) => {
         const colRef = collection(db, 'artifacts', appId, 'users', user.uid, colName);
         let q;
 
-        // Use a stable field for ordering that is guaranteed to exist in old documents.
         const orderByField = (colName === 'clients' || colName === 'materials') ? 'name' : 'date';
         const orderDirection = (colName === 'clients' || colName === 'materials') ? 'asc' : 'desc';
 
-        const commonQueries = [orderBy(orderByField, orderDirection), limit(PAGE_SIZE)];
+        const commonQueries = [orderBy(orderByField, orderDirection)];
         
-        if (append && window.lastDoc[colName]) {
+        // MODIFICACIÓN: Deshabilitar la paginación para materiales y clientes para cargarlos completos siempre
+        if (colName !== 'materials' && colName !== 'clients') {
+            commonQueries.push(limit(PAGE_SIZE));
+        }
+        
+        if (append && window.lastDoc[colName] && colName !== 'materials' && colName !== 'clients') {
             q = query(colRef, ...commonQueries, startAfter(window.lastDoc[colName]));
         } else {
             q = query(colRef, ...commonQueries);
-            window.data[colName] = []; // Reset on new fetch
+            window.data[colName] = []; // Reiniciar colección en nueva carga completa
         }
 
         const snapshot = await getDocs(q);
@@ -457,7 +488,8 @@ const fetchMore = async (colName, append = false) => {
             window.data[colName].push(...newDocs);
         }
 
-        renderData(window.data[colName], colName, { append: false, moreAvailable: newDocs.length === PAGE_SIZE });
+        const isMoreAvailable = (colName !== 'materials' && colName !== 'clients') && newDocs.length === PAGE_SIZE;
+        renderData(window.data[colName], colName, { append: false, moreAvailable: isMoreAvailable });
 
     } catch (err) {
         console.error(`Error fetching ${colName}:`, err);
@@ -582,7 +614,7 @@ window.saveClientData = async () => {
         if(window.editingId) await updateDoc(doc(c, window.editingId), d);
         else await addDoc(c, d);
         showToast('Cliente guardado');
-        fetchMore('clients'); // Refresh
+        fetchMore('clients'); // Recarga completa y estable
     } catch(e) { showToast('Error al guardar', 'error'); console.error(e); }
     finally {
         toggleButtonLoading(btnId, false);
@@ -595,7 +627,7 @@ window.openMaterialModal = (id = null) => {
     const item = id ? window.data.materials.find(x => x.id === id) : null;
     document.getElementById('mt-name').value = item ? item.name : '';
     document.getElementById('mt-price').value = item ? item.price : '';
-    document.getElementById('mt-cost').value = item && item.cost ? item.cost : '';
+    document.getElementById('mt-cost').value = item && item.cost !== undefined ? item.cost : '';
     document.getElementById('mat-title-modal').innerText = id ? 'Editar Concepto' : 'Nuevo Concepto';
     document.getElementById('modal-material').classList.replace('hidden', 'flex');
 };
@@ -620,19 +652,17 @@ window.saveMaterialData = async () => {
     try {
         if(window.editingId) {
             await updateDoc(doc(c, window.editingId), d);
-            showToast('Concepto guardado');
-            fetchMore('materials'); // For an update, re-fetching is acceptable
+            showToast('Concepto actualizado con éxito');
         } else {
-            const docRef = await addDoc(c, d);
-            // FIX: Instead of calling fetchMore, add the new item to the local array and re-render.
-            const newMaterialForUI = { id: docRef.id, name: d.name, price: d.price, cost: d.cost };
-            window.data.materials.push(newMaterialForUI);
-            window.data.materials.sort((a,b) => a.name.localeCompare(b.name));
-            renderData(window.data.materials, 'materials', { append: false });
-            showToast('Concepto guardado');
+            await addDoc(c, d);
+            showToast('Concepto guardado con éxito');
         }
-    } catch(e) { showToast('Error al guardar', 'error'); console.error(e); }
-    finally {
+        // MODIFICACIÓN: En lugar de agregar en local de forma inconsistente, refrescamos la lista entera de Firestore de forma limpia
+        await fetchMore('materials');
+    } catch(e) { 
+        showToast('Error al guardar', 'error'); 
+        console.error(e); 
+    } finally {
         toggleButtonLoading(btnId, false);
         window.closeAllModals();
     }
