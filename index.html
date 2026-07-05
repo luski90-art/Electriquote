@@ -23,7 +23,7 @@
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.3s; }
         .active-tab { color: #0f172a; border-top: 3px solid #0f172a; background: #f1f5f9; }
         .dark .active-tab { color: #f8fafc; border-top: 3px solid #38bdf8; background: #1e293b; }
@@ -53,6 +53,9 @@
         .toast { background-color: #1e293b; color: white; padding: 0.75rem 1.25rem; border-radius: 0.75rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,.2), 0 4px 6px -4px rgba(0,0,0,.2); transform: translateY(2rem); opacity: 0; animation: toast-in 0.3s forwards; }
         .toast.error { background-color: #dc2626; }
         @keyframes toast-in { to { transform: translateY(0); opacity: 1; } }
+        /* Scrollbar styling */
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="min-h-screen pb-24 text-slate-800 bg-slate-50 dark:bg-darkBg dark:text-slate-100">
@@ -116,6 +119,22 @@
         </select>
     </div>
 
+    <!-- MEJORA 2.C: DASHBOARD DE MÉTRICAS -->
+    <div id="quotes-dashboard" class="grid grid-cols-3 gap-3 mb-6">
+        <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/20 dark:to-emerald-900/10 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+            <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block uppercase tracking-wider">Aprobado</span>
+            <b id="dash-earnings" class="text-base md:text-xl font-extrabold block mt-1 text-slate-900 dark:text-white">0.00 €</b>
+        </div>
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+            <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 block uppercase tracking-wider">Conversión</span>
+            <b id="dash-conversion" class="text-base md:text-xl font-extrabold block mt-1 text-slate-900 dark:text-white">0%</b>
+        </div>
+        <div class="bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/10 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+            <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400 block uppercase tracking-wider">Pendientes</span>
+            <b id="dash-active" class="text-base md:text-xl font-extrabold block mt-1 text-slate-900 dark:text-white">0</b>
+        </div>
+    </div>
+
     <!-- VISTAS -->
     <section id="view-quotes" class="space-y-4 fade-in">
         <div class="flex justify-between items-center">
@@ -134,6 +153,17 @@
             <h2 class="text-2xl font-extrabold">Catálogo de Conceptos</h2>
             <button onclick="window.openMaterialModal()" class="bg-slate-900 dark:bg-blue-600 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2"><i data-lucide="plus"></i> Añadir</button>
         </div>
+        
+        <!-- MEJORA 3.B: CHIPS DE FILTRADO POR CATEGORÍA -->
+        <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="materials-category-chips">
+            <button id="chip-cat-Todos" onclick="window.filterMaterialsByCategory('Todos')" class="px-3 py-1.5 bg-slate-900 dark:bg-blue-600 text-white rounded-full text-xs font-bold whitespace-nowrap">Todos</button>
+            <button id="chip-cat-Cables" onclick="window.filterMaterialsByCategory('Cables')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-semibold whitespace-nowrap">Cables</button>
+            <button id="chip-cat-Protecciones" onclick="window.filterMaterialsByCategory('Protecciones')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-semibold whitespace-nowrap">Protecciones</button>
+            <button id="chip-cat-Canalización" onclick="window.filterMaterialsByCategory('Canalización')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-semibold whitespace-nowrap">Canalización</button>
+            <button id="chip-cat-Mano de Obra" onclick="window.filterMaterialsByCategory('Mano de Obra')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-semibold whitespace-nowrap">Mano de Obra</button>
+            <button id="chip-cat-Varios" onclick="window.filterMaterialsByCategory('Varios')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-semibold whitespace-nowrap">Varios</button>
+        </div>
+
         <div id="materials-list" class="grid sm:grid-cols-2 gap-4"></div>
         <div id="materials-loader" class="text-center"></div>
     </section>
@@ -165,23 +195,46 @@
 
 <!-- MODAL CLIENTE -->
 <div id="modal-client" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]">
-    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4 shadow-2xl">
-        <h3 class="font-black text-xl" id="client-title-modal">Cliente</h3>
-        <input id="cl-name" placeholder="Nombre" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <input id="cl-phone" placeholder="Teléfono" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <input id="cl-nif" placeholder="NIF / CIF" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <input id="cl-address" placeholder="Dirección" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <input id="cl-city" placeholder="Ciudad / Municipio" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
-        <button id="cl-save-btn" onclick="window.saveClientData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl">Guardar</button>
-        <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm">Cerrar</button>
+    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4 shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="overflow-y-auto space-y-4 flex-1 scrollbar-none pr-1">
+            <h3 class="font-black text-xl" id="client-title-modal">Cliente</h3>
+            <input id="cl-name" placeholder="Nombre" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
+            <input id="cl-phone" placeholder="Teléfono" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
+            <input id="cl-nif" placeholder="NIF / CIF" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
+            <input id="cl-address" placeholder="Dirección" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
+            <input id="cl-city" placeholder="Ciudad / Municipio" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
+            
+            <!-- MEJORA 3.C: HISTORIAL DE PRESUPUESTOS EN FICHA -->
+            <div class="border-t dark:border-slate-700 pt-4 mt-2">
+                <span class="text-xs font-black tracking-wider text-slate-400 uppercase block mb-2">Historial de Proyectos</span>
+                <div id="cl-quotes-history" class="space-y-2 max-h-36 overflow-y-auto"></div>
+            </div>
+        </div>
+        <div class="space-y-2 pt-2 border-t dark:border-slate-700">
+            <button id="cl-save-btn" onclick="window.saveClientData()" class="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white font-bold rounded-xl">Guardar</button>
+            <button onclick="window.closeAllModals()" class="w-full text-slate-400 text-sm">Cerrar</button>
+        </div>
     </div>
 </div>
 
 <!-- MODAL MATERIAL -->
 <div id="modal-material" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-[100]">
-    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4">
+    <div class="bg-white dark:bg-darkCard w-full max-w-sm rounded-[1.5rem] p-6 space-y-4 shadow-2xl">
         <h3 class="font-black text-xl" id="mat-title-modal">Concepto</h3>
         <input id="mt-name" placeholder="Nombre Material / Partida" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none">
+        
+        <!-- MEJORA 3.B: SELECTOR DE CATEGORÍA -->
+        <div>
+            <label class="text-[10px] font-bold text-slate-400 block mb-1">CATEGORÍA</label>
+            <select id="mt-category" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl outline-none text-sm font-semibold">
+                <option value="Cables">Cables</option>
+                <option value="Protecciones">Protecciones</option>
+                <option value="Canalización">Canalización</option>
+                <option value="Mano de Obra">Mano de Obra</option>
+                <option value="Varios" selected>Varios</option>
+            </select>
+        </div>
+
         <div class="grid grid-cols-2 gap-2">
             <div>
                 <label class="text-[10px] font-bold text-slate-400 block mb-1">P. VENTA (€)</label>
@@ -204,7 +257,7 @@
             <h3 id="quote-title-modal" class="font-black text-xl">Presupuesto</h3>
             <button onclick="window.closeAllModals()"><i data-lucide="x"></i></button>
         </div>
-        <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        <div class="p-6 overflow-y-auto space-y-4 flex-1 scrollbar-none">
             <input id="q-ref" placeholder="Referencia Proyecto" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 rounded-xl font-bold">
             <div class="flex gap-2">
                 <select id="q-cl-select" class="flex-1 p-4 border dark:border-slate-700 dark:bg-slate-800 rounded-xl"></select>
@@ -228,7 +281,11 @@
             <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-700">
                 <div class="flex flex-col gap-2 mb-4">
                     <div class="flex gap-2">
-                        <select id="q-mt-select" class="flex-1 p-3 border dark:border-slate-700 dark:bg-slate-800 rounded-xl text-sm"></select>
+                        <!-- MEJORA 2.A: SELECTOR DE MATERIAL CON AUTOCOMPLETADO INTERACTIVO -->
+                        <div class="relative flex-1">
+                            <input id="q-mt-search" type="text" placeholder="Escribe para buscar concepto..." oninput="window.filterMaterialAutocomplete(this.value)" class="w-full p-3 border dark:border-slate-700 dark:bg-slate-800 rounded-xl text-sm outline-none focus:ring-2 ring-blue-500">
+                            <div id="q-mt-autocomplete-list" class="absolute z-50 left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto hidden"></div>
+                        </div>
                         <input id="q-mt-qty" type="number" value="1" class="w-16 p-3 border dark:border-slate-700 dark:bg-slate-800 rounded-xl text-center">
                         <button onclick="window.addItemToQuote()" class="bg-slate-900 dark:bg-blue-600 text-white px-4 rounded-xl shadow-md"><i data-lucide="plus"></i></button>
                     </div>
@@ -253,9 +310,14 @@
                         <span>TOTAL</span>
                         <span id="q-total-val">0.00 €</span>
                     </div>
-                    <div class="flex justify-between text-xs font-bold text-emerald-500 mt-2">
+                    
+                    <!-- MEJORA 2.B: SEMAFORIZACIÓN DE MARGEN DE BENEFICIO -->
+                    <div class="flex justify-between items-center text-xs font-bold mt-2 pt-2 border-t border-dashed dark:border-slate-700">
                         <span>BENEFICIO ESTIMADO</span>
-                        <span id="q-profit-val">0.00 €</span>
+                        <div class="flex items-center gap-2">
+                            <span id="q-profit-badge" class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-slate-100 text-slate-500">0%</span>
+                            <span id="q-profit-val" class="font-black text-emerald-500">0.00 €</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -332,6 +394,10 @@ window.data = { clients: [], materials: [], quotes: [], templates: [] };
 window.lastDoc = { clients: null, materials: null, quotes: null };
 window.tempItems = [];
 window.editingId = null;
+
+// variables globales para mejoras de UX
+window.selectedMaterialId = null;
+window.selectedMaterialCategory = 'Todos';
 
 // --- UI & Utility Functions ---
 
@@ -468,7 +534,7 @@ const fetchMore = async (colName, append = false) => {
 
         const commonQueries = [orderBy(orderByField, orderDirection)];
         
-        // MODIFICACIÓN: Deshabilitar la paginación para materiales y clientes para cargarlos completos siempre
+        // Deshabilitar la paginación para materiales y clientes para cargarlos completos siempre
         if (colName !== 'materials' && colName !== 'clients') {
             commonQueries.push(limit(PAGE_SIZE));
         }
@@ -477,7 +543,7 @@ const fetchMore = async (colName, append = false) => {
             q = query(colRef, ...commonQueries, startAfter(window.lastDoc[colName]));
         } else {
             q = query(colRef, ...commonQueries);
-            window.data[colName] = []; // Reiniciar colección en nueva carga completa
+            window.data[colName] = []; 
         }
 
         const snapshot = await getDocs(q);
@@ -498,6 +564,19 @@ const fetchMore = async (colName, append = false) => {
     }
 };
 
+window.updateDashboard = () => {
+    const quotes = window.data.quotes;
+    const approved = quotes.filter(q => q.status === 'aprobado');
+    const pending = quotes.filter(q => q.status === 'pendiente');
+    
+    const earnings = approved.reduce((acc, q) => acc + (q.total || 0), 0);
+    const conversion = quotes.length > 0 ? (approved.length / quotes.length) * 100 : 0;
+    
+    document.getElementById('dash-earnings').innerText = earnings.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+    document.getElementById('dash-conversion').innerText = conversion.toFixed(0) + "%";
+    document.getElementById('dash-active').innerText = pending.length;
+};
+
 const renderData = (items, colName, options) => {
     const { append, moreAvailable } = options;
     const listEl = document.getElementById(`${colName}-list`);
@@ -509,6 +588,7 @@ const renderData = (items, colName, options) => {
     const filteredItems = items.filter(item => {
         let matchesSearch = true;
         let matchesStatus = true;
+        let matchesCategory = true;
 
         if (search) {
             const name = item.name || item.ref || '';
@@ -517,7 +597,10 @@ const renderData = (items, colName, options) => {
         if (colName === 'quotes' && statusFilter !== 'todos') {
             matchesStatus = item.status === statusFilter;
         }
-        return matchesSearch && matchesStatus;
+        if (colName === 'materials' && window.selectedMaterialCategory !== 'Todos') {
+            matchesCategory = (item.category || 'Varios') === window.selectedMaterialCategory;
+        }
+        return matchesSearch && matchesStatus && matchesCategory;
     });
 
     let html = '';
@@ -532,7 +615,13 @@ const renderData = (items, colName, options) => {
         case 'materials':
             html = filteredItems.map(m => `
                 <div onclick="window.openMaterialModal('${m.id}')" class="bg-white dark:bg-darkCard p-4 rounded-xl border dark:border-slate-700 flex justify-between items-center cursor-pointer hover:border-blue-400">
-                    <div><b class="block">${m.name}</b><div class="flex gap-2 text-[10px] text-slate-400 mt-1"><span>Venta: ${(m.price || 0).toFixed(2)}€</span><span>•</span><span>Costo: ${(m.cost || 0).toFixed(2)}€</span></div></div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <b class="block">${m.name}</b>
+                            <span class="px-1.5 py-0.5 rounded text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold uppercase tracking-wider">${m.category || 'Varios'}</span>
+                        </div>
+                        <div class="flex gap-2 text-[10px] text-slate-400 mt-1"><span>Venta: ${(m.price || 0).toFixed(2)}€</span><span>•</span><span>Costo: ${(m.cost || 0).toFixed(2)}€</span></div>
+                    </div>
                     <button onclick="window.delItem('materials','${m.id}',event)" class="text-slate-300 hover:text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                 </div>`).join('');
             break;
@@ -549,7 +638,11 @@ const renderData = (items, colName, options) => {
                     </div>
                     <div class="flex justify-between items-end border-t dark:border-slate-700 pt-3">
                         <span class="font-black text-xl">${(q.total || 0).toFixed(2)} €</span>
-                        <div class="flex gap-2"><button onclick="window.generatePDFWrapper('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button><button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
+                        <div class="flex gap-1.5">
+                            <button onclick="window.duplicateQuote('${q.id}', event)" class="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg" title="Duplicar"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                            <button onclick="window.generatePDFWrapper('${q.id}', event)" class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-4 h-4"></i></button>
+                            <button onclick="window.delItem('quotes','${q.id}', event)" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
                     </div>
                 </div>`;
             }).join('');
@@ -576,6 +669,10 @@ const renderData = (items, colName, options) => {
         loaderEl.innerHTML = '';
     }
 
+    if (colName === 'quotes') {
+        window.updateDashboard();
+    }
+
     lucide.createIcons();
 };
 
@@ -590,6 +687,30 @@ window.openClientModal = (id = null) => {
     document.getElementById('cl-address').value = item ? item.address : '';
     document.getElementById('cl-city').value = item && item.city ? item.city : '';
     document.getElementById('client-title-modal').innerText = id ? 'Editar Cliente' : 'Nuevo Cliente';
+    
+    // MEJORA 3.C: RENDERIZAR HISTORIAL DE PRESUPUESTOS DE FORMA SENSATA
+    const historyEl = document.getElementById('cl-quotes-history');
+    if (id) {
+        const clientQuotes = window.data.quotes.filter(q => q.clientId === id);
+        if (clientQuotes.length > 0) {
+            historyEl.innerHTML = clientQuotes.map(q => {
+                const statusColors = { pendiente: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10', aprobado: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10', rechazado: 'text-red-500 bg-red-50 dark:bg-red-500/10' };
+                return `
+                <div class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-[11px] font-semibold border dark:border-slate-700">
+                    <div>
+                        <span class="block text-slate-400 text-[9px] tracking-wider font-bold">REF: ${q.ref}</span>
+                        <span class="font-bold">${q.total.toFixed(2)} €</span>
+                    </div>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] uppercase font-bold ${statusColors[q.status || 'pendiente']}">${q.status}</span>
+                </div>`;
+            }).join('');
+        } else {
+            historyEl.innerHTML = `<span class="text-[11px] text-slate-400 block text-center py-2">Sin proyectos asociados</span>`;
+        }
+    } else {
+        historyEl.innerHTML = `<span class="text-[11px] text-slate-400 block text-center py-2">Guarda el cliente para ver su historial</span>`;
+    }
+
     document.getElementById('modal-client').classList.replace('hidden', 'flex');
 };
 
@@ -614,7 +735,7 @@ window.saveClientData = async () => {
         if(window.editingId) await updateDoc(doc(c, window.editingId), d);
         else await addDoc(c, d);
         showToast('Cliente guardado');
-        fetchMore('clients'); // Recarga completa y estable
+        fetchMore('clients'); 
     } catch(e) { showToast('Error al guardar', 'error'); console.error(e); }
     finally {
         toggleButtonLoading(btnId, false);
@@ -628,6 +749,7 @@ window.openMaterialModal = (id = null) => {
     document.getElementById('mt-name').value = item ? item.name : '';
     document.getElementById('mt-price').value = item ? item.price : '';
     document.getElementById('mt-cost').value = item && item.cost !== undefined ? item.cost : '';
+    document.getElementById('mt-category').value = item && item.category ? item.category : 'Varios';
     document.getElementById('mat-title-modal').innerText = id ? 'Editar Concepto' : 'Nuevo Concepto';
     document.getElementById('modal-material').classList.replace('hidden', 'flex');
 };
@@ -637,6 +759,7 @@ window.saveMaterialData = async () => {
     toggleButtonLoading(btnId, true);
     const price = parseFloat(document.getElementById('mt-price').value) || 0;
     const cost = parseFloat(document.getElementById('mt-cost').value) || 0; 
+    const category = document.getElementById('mt-category').value;
     
     if(price < 0 || cost < 0) { showToast("Los precios no pueden ser negativos", 'error'); toggleButtonLoading(btnId, false); return; }
     
@@ -644,6 +767,7 @@ window.saveMaterialData = async () => {
         name: document.getElementById('mt-name').value.trim(), 
         price: price, 
         cost: cost,
+        category: category,
         up: serverTimestamp() 
     };
     if(!d.name) { showToast('El nombre es obligatorio', 'error'); toggleButtonLoading(btnId, false); return; }
@@ -652,12 +776,11 @@ window.saveMaterialData = async () => {
     try {
         if(window.editingId) {
             await updateDoc(doc(c, window.editingId), d);
-            showToast('Concepto actualizado con éxito');
+            showToast('Concepto actualizado');
         } else {
             await addDoc(c, d);
-            showToast('Concepto guardado con éxito');
+            showToast('Concepto guardado');
         }
-        // MODIFICACIÓN: En lugar de agregar en local de forma inconsistente, refrescamos la lista entera de Firestore de forma limpia
         await fetchMore('materials');
     } catch(e) { 
         showToast('Error al guardar', 'error'); 
@@ -668,11 +791,35 @@ window.saveMaterialData = async () => {
     }
 };
 
+window.filterMaterialsByCategory = (cat) => {
+    window.selectedMaterialCategory = cat;
+    
+    // actualizar estilos de los chips
+    const categories = ['Todos', 'Cables', 'Protecciones', 'Canalización', 'Mano de Obra', 'Varios'];
+    categories.forEach(c => {
+        const chip = document.getElementById(`chip-cat-${c}`);
+        if (chip) {
+            if (c === cat) {
+                chip.className = "px-3 py-1.5 bg-slate-900 dark:bg-blue-600 text-white rounded-full text-xs font-bold whitespace-nowrap";
+            } else {
+                chip.className = "px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-semibold whitespace-nowrap";
+            }
+        }
+    });
+    
+    window.applyFilters();
+};
+
 window.openQuoteModal = (id = null) => {
     if(window.data.clients.length === 0) { showToast("Primero crea un cliente.", 'error'); return; }
     window.editingId = id;
     document.getElementById('q-cl-select').innerHTML = window.data.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    document.getElementById('q-mt-select').innerHTML = window.data.materials.map(m => `<option value="${m.id}">${m.name} (${(m.price || 0).toFixed(2)}€)</option>`).join('');
+    
+    // Limpiar input de autocompletado interactivo
+    window.selectedMaterialId = null;
+    document.getElementById('q-mt-search').value = "";
+    document.getElementById('q-mt-qty').value = "1";
+    document.getElementById('q-mt-autocomplete-list').classList.add('hidden');
     
     const c = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
     getDocs(query(c)).then(s => {
@@ -695,6 +842,45 @@ window.openQuoteModal = (id = null) => {
     window.renderQuoteList();
     document.getElementById('modal-quote').classList.replace('hidden', 'flex');
 };
+
+window.filterMaterialAutocomplete = (val) => {
+    const list = document.getElementById('q-mt-autocomplete-list');
+    if (!val) {
+        list.classList.add('hidden');
+        return;
+    }
+    const queryStr = val.toLowerCase();
+    const filtered = window.data.materials.filter(m => m.name.toLowerCase().includes(queryStr));
+    
+    if (filtered.length > 0) {
+        list.innerHTML = filtered.map(m => `
+            <div onclick="window.selectMaterialAutocomplete('${m.id}', '${m.name.replace(/'/g, "\\'")}')" class="p-3 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer text-xs font-bold border-b dark:border-slate-700">
+                <div class="flex justify-between">
+                    <span>${m.name}</span>
+                    <span class="text-blue-500 font-extrabold">${(m.price || 0).toFixed(2)}€</span>
+                </div>
+            </div>
+        `).join('');
+        list.classList.remove('hidden');
+    } else {
+        list.innerHTML = `<div class="p-3 text-xs text-slate-400">Sin coincidencias</div>`;
+        list.classList.remove('hidden');
+    }
+};
+
+window.selectMaterialAutocomplete = (id, name) => {
+    window.selectedMaterialId = id;
+    document.getElementById('q-mt-search').value = name;
+    document.getElementById('q-mt-autocomplete-list').classList.add('hidden');
+};
+
+// Cerrar autocompletado al pulsar fuera
+document.addEventListener('click', (e) => {
+    const list = document.getElementById('q-mt-autocomplete-list');
+    if (list && !document.getElementById('q-mt-search').contains(e.target) && !list.contains(e.target)) {
+        list.classList.add('hidden');
+    }
+});
 
 window.saveFinalQuote = async () => {
     const btnId = 'q-save-btn';
@@ -726,6 +912,35 @@ window.saveFinalQuote = async () => {
     }
 };
 
+// MEJORA 3.A: CLONADOR DE PRESUPUESTOS (Duplicar Proyecto)
+window.duplicateQuote = async (id, event) => {
+    event.stopPropagation();
+    if (!confirm("¿Deseas duplicar este presupuesto?")) return;
+    const quote = window.data.quotes.find(q => q.id === id);
+    if (!quote) { showToast("Presupuesto no encontrado.", "error"); return; }
+    
+    const duplicatedData = {
+        ref: quote.ref + " (Copia)",
+        clientId: quote.clientId,
+        status: 'pendiente',
+        iva: quote.iva,
+        items: quote.items.map(it => ({...it})),
+        subtotal: quote.subtotal,
+        total: quote.total,
+        date: serverTimestamp()
+    };
+    
+    const colRef = collection(db, 'artifacts', appId, 'users', user.uid, 'quotes');
+    try {
+        await addDoc(colRef, duplicatedData);
+        showToast('Presupuesto duplicado con éxito');
+        fetchMore('quotes');
+    } catch(e) {
+        showToast('Error al duplicar el presupuesto', 'error');
+        console.error(e);
+    }
+};
+
 window.delItem = async (col, id, e) => {
     if(e) e.stopPropagation();
     if(confirm("¿Seguro que quieres eliminar este elemento?")) {
@@ -743,11 +958,20 @@ window.delItem = async (col, id, e) => {
 
 // --- Quote Item Management ---
 window.addItemToQuote = () => {
-    const mid = document.getElementById('q-mt-select').value;
+    const mid = window.selectedMaterialId;
     const qty = parseFloat(document.getElementById('q-mt-qty').value) || 1;
     const m = window.data.materials.find(x => x.id === mid);
-    if(!m || qty <= 0) return;
+    if(!m || qty <= 0) {
+        showToast("Selecciona primero un concepto del autocompletado", "error");
+        return;
+    }
     window.tempItems.push({...m, qty, sub: m.price * qty, totalCost: (m.cost || 0) * qty});
+    
+    // resetear campo de autocompletado
+    window.selectedMaterialId = null;
+    document.getElementById('q-mt-search').value = "";
+    document.getElementById('q-mt-qty').value = "1";
+    
     window.renderQuoteList();
 };
 
@@ -782,6 +1006,19 @@ window.renderQuoteList = () => {
 
     document.getElementById('q-total-val').innerText = total.toFixed(2) + " €";
     document.getElementById('q-profit-val').innerText = profit.toFixed(2) + " €";
+    
+    // MEJORA 2.B: SEMAFORIZACIÓN DE BENEFICIO ESTIMADO
+    const profitPerc = subtotal > 0 ? (profit / subtotal) * 100 : 0;
+    const badge = document.getElementById('q-profit-badge');
+    badge.innerText = profitPerc.toFixed(0) + "%";
+    
+    if (profitPerc < 15) {
+        badge.className = "px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400";
+    } else if (profitPerc <= 30) {
+        badge.className = "px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400";
+    } else {
+        badge.className = "px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400";
+    }
     
     lucide.createIcons();
 };
@@ -822,7 +1059,7 @@ window.saveCurrentAsTemplate = async () => {
         await addDoc(c, { name, items: window.tempItems, up: serverTimestamp() });
         document.getElementById('tp-name').value = "";
         showToast("Plantilla guardada");
-        window.openTemplateModal(); // Refresh list
+        window.openTemplateModal(); 
     } catch(e) { showToast('Error al guardar plantilla', 'error'); console.error(e); }
     finally {
         toggleButtonLoading(btnId, false);
@@ -849,7 +1086,7 @@ window.generatePDFWrapper = async (id, event) => {
     try {
         await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
         await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js');
-        generatePDF(id); // Call the actual generator
+        generatePDF(id); 
     } catch (error) {
         console.error("Failed to load PDF scripts", error);
         showToast("Error al cargar librerías PDF", "error");
@@ -985,7 +1222,6 @@ const generatePDF = (id) => {
 
 
 // --- Auth State ---
-
 onAuthStateChanged(auth, (u) => {
     if (u) {
         user = u;
