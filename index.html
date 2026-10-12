@@ -176,6 +176,49 @@
         <div id="clients-list" class="grid sm:grid-cols-2 gap-4"></div>
         <div id="clients-loader" class="text-center"></div>
     </section>
+
+    <section id="view-counter" class="hidden space-y-5 fade-in">
+        <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-extrabold">Contador de Material</h2>
+            <button onclick="window.resetCounterAll()" class="bg-red-50 dark:bg-red-900/30 text-red-500 px-4 py-3 rounded-xl font-bold flex items-center gap-2 text-sm"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reiniciar</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Obra o Cliente</label>
+                <input id="cnt-obra" oninput="window.updateCounterMeta()" type="text" placeholder="Nombre de la obra o cliente" class="w-full p-4 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none focus:ring-2 ring-blue-500">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Serie de Mecanismo</label>
+                <input id="cnt-serie" oninput="window.updateCounterMeta()" type="text" placeholder="Ej: Niessen Zenit, Simon 270..." class="w-full p-4 bg-white dark:bg-darkCard border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none focus:ring-2 ring-blue-500">
+            </div>
+        </div>
+
+        <div id="counter-cat-marcos" class="bg-white dark:bg-darkCard rounded-2xl border border-slate-200 dark:border-slate-700 p-4"></div>
+        <div id="counter-cat-mecanismos" class="bg-white dark:bg-darkCard rounded-2xl border border-slate-200 dark:border-slate-700 p-4"></div>
+        <div id="counter-cat-cajas" class="bg-white dark:bg-darkCard rounded-2xl border border-slate-200 dark:border-slate-700 p-4"></div>
+        <div id="counter-cat-iluminacion" class="bg-white dark:bg-darkCard rounded-2xl border border-slate-200 dark:border-slate-700 p-4"></div>
+
+        <div class="bg-white dark:bg-darkCard rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <h3 class="font-extrabold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Añadir otra pieza
+            </h3>
+            <div class="flex gap-2 mb-3">
+                <input id="cnt-custom-input" type="text" placeholder="Escribe el nombre de la pieza..." class="flex-1 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm focus:ring-2 ring-blue-500">
+                <button onclick="window.addCustomPiece()" class="bg-slate-900 dark:bg-blue-600 text-white px-4 rounded-xl shadow-md"><i data-lucide="plus"></i></button>
+            </div>
+            <div id="counter-custom-list"></div>
+        </div>
+
+        <div class="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-blue-900 dark:to-slate-900 text-white rounded-2xl p-5 shadow-lg">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-black uppercase tracking-wider text-sm flex items-center gap-2"><i data-lucide="clipboard-list" class="w-4 h-4"></i> Resumen</h3>
+                <span class="text-xs font-bold bg-white/10 px-3 py-1 rounded-full">Total: <span id="counter-total-pieces">0</span></span>
+            </div>
+            <div id="counter-summary-list" class="max-h-48 overflow-y-auto scrollbar-none mb-4"></div>
+            <button onclick="window.copyCounterSummary()" class="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-sm flex items-center justify-center gap-2"><i data-lucide="copy" class="w-4 h-4"></i> Copiar Resumen</button>
+        </div>
+    </section>
 </main>
 
 <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-darkCard border-t border-slate-200 dark:border-slate-800 flex justify-around items-center h-20 z-40 shadow-lg">
@@ -190,6 +233,10 @@
     <button onclick="window.switchView('clients')" id="nav-clients" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">
         <i data-lucide="users" class="w-6 h-6 mb-1"></i>
         <span class="text-[10px] font-bold uppercase">Clientes</span>
+    </button>
+    <button onclick="window.switchView('counter')" id="nav-counter" class="flex-1 flex flex-col items-center justify-center text-slate-400 h-full">
+        <i data-lucide="calculator" class="w-6 h-6 mb-1"></i>
+        <span class="text-[10px] font-bold uppercase">Contador</span>
     </button>
 </nav>
 
@@ -509,7 +556,7 @@ window.doLogout = async () => {
 };
 
 window.switchView = (v) => {
-    ['quotes','materials','clients'].forEach(x => {
+    ['quotes','materials','clients','counter'].forEach(x => {
         document.getElementById('view-'+x).classList.add('hidden');
         document.getElementById('nav-'+x).className = "flex-1 flex flex-col items-center justify-center text-slate-400 h-full";
     });
@@ -1248,6 +1295,172 @@ const generatePDF = (id) => {
     document.getElementById('modal-pdf').classList.replace('hidden', 'flex');
 };
 
+// =================== CONTADOR DE MATERIAL ===================
+const COUNTER_STORAGE_KEY = 'eq-counter-state-v1';
+
+const slugify = (s) => s.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '');
+
+window.counterCategories = {
+    marcos: ["Marco de 1 elemento", "Marco de 2 elementos", "Marco de 3 elementos", "Marco de 4 elementos"],
+    mecanismos: ["Enchufe 16A", "Enchufe 25A", "Interruptor", "Conmutador", "Cruzamiento", "Doble interruptor", "Doble conmutador", "Pulsador", "Regulador", "Interruptor de persiana", "Tapa ciega", "Salida de cable", "Detector de presencia", "Toma TV", "Toma RJ45", "Enchufe USB"],
+    cajas: ["Cajillo", "Cajillo de pladur", "Caja de registro 100x100", "Caja de registro 160x100", "Caja de registro 200x130", "Caja de registro 200x300", "Caja de registro 300x500"],
+    iluminacion: ["Aro dicroico", "Lámpara GU10", "Portalámparas", "Perfil de tira de led superficie", "Perfil de tira de led empotrado", "Tira de led 24V", "Tira de led 230V", "Fuente alimentación 24V 60W", "Fuente alimentación 100W", "Downlight", "Timbre"]
+};
+
+window.counterState = { obra: '', serie: '', counts: {}, customItems: [] };
+
+const loadCounterState = () => {
+    try {
+        const raw = localStorage.getItem(COUNTER_STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            window.counterState = Object.assign({ obra: '', serie: '', counts: {}, customItems: [] }, parsed);
+        }
+    } catch (e) { console.warn('No se pudo cargar el contador guardado', e); }
+};
+
+const saveCounterState = () => {
+    try { localStorage.setItem(COUNTER_STORAGE_KEY, JSON.stringify(window.counterState)); } catch (e) { console.warn(e); }
+};
+
+const counterCardHTML = (name, key, removable = false) => `
+    <div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
+        <span class="text-sm font-semibold flex-1 pr-2">${name}</span>
+        <div class="flex items-center gap-1.5">
+            <button onclick="window.decCounter('${key}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-black text-lg active:scale-95 transition-transform">−</button>
+            <span id="cnt-val-${key}" class="w-8 text-center font-black text-sm">${(window.counterState.counts[key] || 0)}</span>
+            <button onclick="window.incCounter('${key}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-900 dark:bg-blue-600 text-white font-black text-lg active:scale-95 transition-transform">+</button>
+            ${removable ? `<button onclick="window.removeCustomPiece('${key}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 dark:bg-red-900/30 text-red-500 ml-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+        </div>
+    </div>`;
+
+const renderCounterCategory = (containerId, title, icon, items) => {
+    document.getElementById(containerId).innerHTML = `
+        <h3 class="font-extrabold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+            <i data-lucide="${icon}" class="w-4 h-4"></i> ${title}
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            ${items.map(name => counterCardHTML(name, slugify(name))).join('')}
+        </div>`;
+};
+
+window.renderCustomPieces = () => {
+    const container = document.getElementById('counter-custom-list');
+    if (window.counterState.customItems.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">Añade piezas extra que no estén en la lista.</p>`;
+    } else {
+        container.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${window.counterState.customItems.map(it => counterCardHTML(it.name, it.key, true)).join('')}</div>`;
+    }
+    lucide.createIcons();
+};
+
+window.renderCounterSummary = () => {
+    const summaryEl = document.getElementById('counter-summary-list');
+    const registry = {};
+    Object.values(window.counterCategories).flat().forEach(name => registry[slugify(name)] = name);
+    window.counterState.customItems.forEach(it => registry[it.key] = it.name);
+
+    const entries = Object.entries(window.counterState.counts).filter(([, v]) => v > 0);
+    const totalPieces = entries.reduce((a, [, v]) => a + v, 0);
+    document.getElementById('counter-total-pieces').innerText = totalPieces;
+
+    if (entries.length === 0) {
+        summaryEl.innerHTML = `<p class="text-xs text-slate-300 text-center py-3">Todavía no has añadido ninguna pieza.</p>`;
+        return;
+    }
+    summaryEl.innerHTML = entries.map(([key, count]) => `
+        <div class="flex justify-between text-xs font-semibold border-b border-dashed border-white/10 py-1.5">
+            <span>${registry[key] || key}</span>
+            <span class="font-black">${count}</span>
+        </div>`).join('');
+};
+
+window.incCounter = (key) => {
+    window.counterState.counts[key] = (window.counterState.counts[key] || 0) + 1;
+    const el = document.getElementById(`cnt-val-${key}`);
+    if (el) el.innerText = window.counterState.counts[key];
+    saveCounterState();
+    window.renderCounterSummary();
+};
+
+window.decCounter = (key) => {
+    const current = window.counterState.counts[key] || 0;
+    if (current <= 0) return;
+    window.counterState.counts[key] = current - 1;
+    const el = document.getElementById(`cnt-val-${key}`);
+    if (el) el.innerText = window.counterState.counts[key];
+    saveCounterState();
+    window.renderCounterSummary();
+};
+
+window.updateCounterMeta = () => {
+    window.counterState.obra = document.getElementById('cnt-obra').value;
+    window.counterState.serie = document.getElementById('cnt-serie').value;
+    saveCounterState();
+};
+
+window.addCustomPiece = () => {
+    const input = document.getElementById('cnt-custom-input');
+    const name = input.value.trim();
+    if (!name) { showToast('Escribe el nombre de la pieza', 'error'); return; }
+    const key = `custom-${slugify(name)}-${Date.now()}`;
+    window.counterState.customItems.push({ key, name });
+    window.counterState.counts[key] = 0;
+    input.value = '';
+    saveCounterState();
+    window.renderCustomPieces();
+    window.renderCounterSummary();
+    showToast('Pieza añadida');
+};
+
+window.removeCustomPiece = (key) => {
+    window.counterState.customItems = window.counterState.customItems.filter(it => it.key !== key);
+    delete window.counterState.counts[key];
+    saveCounterState();
+    window.renderCustomPieces();
+    window.renderCounterSummary();
+};
+
+window.resetCounterAll = () => {
+    if (!confirm('¿Seguro que quieres reiniciar todos los contadores a 0?')) return;
+    Object.keys(window.counterState.counts).forEach(k => window.counterState.counts[k] = 0);
+    saveCounterState();
+    initCounterView();
+    showToast('Contadores reiniciados');
+};
+
+window.copyCounterSummary = () => {
+    const registry = {};
+    Object.values(window.counterCategories).flat().forEach(name => registry[slugify(name)] = name);
+    window.counterState.customItems.forEach(it => registry[it.key] = it.name);
+    const entries = Object.entries(window.counterState.counts).filter(([, v]) => v > 0);
+    if (entries.length === 0) { showToast('No hay piezas contadas todavía', 'error'); return; }
+
+    let text = `LISTADO DE MATERIAL\n`;
+    if (window.counterState.obra) text += `Obra/Cliente: ${window.counterState.obra}\n`;
+    if (window.counterState.serie) text += `Serie de mecanismo: ${window.counterState.serie}\n`;
+    text += `\n`;
+    entries.forEach(([key, count]) => { text += `- ${registry[key] || key}: ${count}\n`; });
+
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Resumen copiado al portapapeles');
+    }).catch(() => showToast('No se pudo copiar', 'error'));
+};
+
+const initCounterView = () => {
+    document.getElementById('cnt-obra').value = window.counterState.obra || '';
+    document.getElementById('cnt-serie').value = window.counterState.serie || '';
+    renderCounterCategory('counter-cat-marcos', 'Marcos', 'square', window.counterCategories.marcos);
+    renderCounterCategory('counter-cat-mecanismos', 'Mecanismos', 'power', window.counterCategories.mecanismos);
+    renderCounterCategory('counter-cat-cajas', 'Cajas', 'box', window.counterCategories.cajas);
+    renderCounterCategory('counter-cat-iluminacion', 'Iluminación', 'lightbulb', window.counterCategories.iluminacion);
+    window.renderCustomPieces();
+    window.renderCounterSummary();
+    lucide.createIcons();
+};
+
+loadCounterState();
+initCounterView();
 
 // --- Auth State ---
 onAuthStateChanged(auth, (u) => {
